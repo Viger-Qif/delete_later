@@ -103,6 +103,18 @@
       root.insertBefore(banner, root.firstChild);
     }
 
+    /* Бейдж источника разбора: облачный ИИ или офлайн (экспертная система). */
+    if (analysis) {
+      const offlineAnalysis = analysis.source === 'offline-personal' || analysis.source === 'emergency-fallback' ||
+        (result.analysis.runtime && result.analysis.runtime.responder === 'expert_system');
+      if (offlineAnalysis) {
+        const badge = document.createElement('div');
+        badge.className = 'tc-return-banner';
+        badge.innerHTML = '<span>Разбор сформирован в офлайн-режиме экспертной системой — без внешних сервисов.</span>';
+        root.insertBefore(badge, root.firstChild);
+      }
+    }
+
     const card = document.createElement('article');
     card.className = 'results__card';
     card.setAttribute('data-reveal', '');

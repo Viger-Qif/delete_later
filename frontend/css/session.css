@@ -521,3 +521,4 @@ body.panel-right-open.is-narrow .secretary-widget { opacity: 0; visibility: hidd
 .session-exit-button{min-height:40px;padding:8px 14px;white-space:nowrap;color:var(--danger,#9b3c36);border-color:#d9aaa6;background:#fff}
 .session-exit-modal{position:fixed;inset:0;z-index:1400;display:grid;place-items:center;padding:16px}.session-exit-modal__backdrop{position:absolute;inset:0;background:rgba(10,22,18,.68)}.session-exit-modal__dialog{position:relative;width:min(460px,100%);padding:24px;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}.session-exit-modal__dialog h2{margin:0 0 8px}.session-exit-modal__dialog p{margin:0 0 18px;color:var(--text-muted);line-height:1.55}.session-exit-modal__actions{display:grid;gap:9px}.session-exit-modal__actions .btn{width:100%}
 @media(max-width:620px){.session-tools{gap:6px}.session-exit-button{padding:7px 10px;font-size:13px}}
+.runtime-status.is-offline{border-color:#7b61b3;background:#f4effa;color:#5b4585}

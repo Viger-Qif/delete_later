@@ -29,6 +29,21 @@
   }
   const TC_PLAN = twoChairsPlan();
 
+  /* --- Индикация офлайн-режима (без API-ключа или при сбое облака) --- */
+  let OFFLINE_MODE = false;
+  function setOfflineMode(on, reason) {
+    if (!on || OFFLINE_MODE) return;
+    OFFLINE_MODE = true;
+    try { localStorage.setItem('nt_last_offline', JSON.stringify({ at: Date.now(), reason: reason || '' })); } catch (_) {}
+    if (runtimeStatus) {
+      runtimeStatus.textContent = 'Офлайн-режим · экспертная система';
+      runtimeStatus.dataset.responder = 'expert_system';
+      runtimeStatus.classList.add('is-offline');
+    }
+    addMsg('Облачный ИИ недоступен — диалог продолжается в офлайн-режиме на экспертной системе. Записи сохранены полностью.', 'system');
+  }
+  NTData.health().then((h) => { if (h && h.llm_mode === 'expert-system') setOfflineMode(true, 'no-key'); }).catch(() => {});
+
   const progressFill = document.getElementById('progress-fill');
   const progressBar  = document.getElementById('progress-bar');
   const progressLabel = document.getElementById('progress-label');
@@ -183,7 +198,7 @@
   }
 
   /* --- Чат --- */
-  function runtimeLabel(m){if(!m||!m.responder)return '';if(m.responder==='scripted')return '';const src=m.responder==='cloud_ai'?'Облачный ИИ':m.responder==='expert_system'?'Экспертная система':m.responder;return `${src}${m.model?' · '+m.model:''}${m.latency_ms?' · '+m.latency_ms+' мс':''}${m.fallback_used?' · резерв':''}`;}function updateRuntime(m){const label=runtimeLabel(m);if(!label)return;runtimeStatus.textContent=label;runtimeStatus.dataset.responder=m.responder||'';runtimeStatus.classList.toggle('is-fallback',Boolean(m.fallback_used));}
+  function runtimeLabel(m){if(!m||!m.responder)return '';if(m.responder==='scripted')return '';const src=m.responder==='cloud_ai'?'Облачный ИИ':m.responder==='expert_system'?'Экспертная система':m.responder;return `${src}${m.model?' · '+m.model:''}${m.latency_ms?' · '+m.latency_ms+' мс':''}${m.fallback_used?' · резерв':''}`;}function updateRuntime(m){const label=runtimeLabel(m);if(!label)return;if(m.responder==='expert_system')setOfflineMode(true,'expert-answer');runtimeStatus.textContent=(m.responder==='expert_system'&&OFFLINE_MODE)?'Офлайн-режим · экспертная система':label;runtimeStatus.dataset.responder=m.responder||'';runtimeStatus.classList.toggle('is-fallback',Boolean(m.fallback_used));}
   function addMsg(text,who,runtime=null){const el=document.createElement('div');el.className='msg msg--'+who;const body=document.createElement('span');body.textContent=text;el.appendChild(body);chatLog.appendChild(el);chatLog.scrollTop=chatLog.scrollHeight;return el;}
 
   function showTyping() {
@@ -391,6 +406,7 @@
       chatInput.value = text;
       updateChatCounter();
       addMsg(error.message, 'system');
+      setOfflineMode(true, 'turn-error');
       NTSecretary.warning('Не удалось получить ответ. Состояние диалога сверено с сервером.');
     } finally {
       sending = false;

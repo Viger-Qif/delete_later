@@ -13,6 +13,7 @@
   const SILENCE_SECONDS = 10;
   const DIFFICULTY = CONFIG.difficultyMode || 'medium';
   const ENGINE_MODE=CONFIG.engineMode||'auto';
+  let OFFLINE_MODE=false;
 
   /* --- Интеграция режима «Два стула» (голосовые сессии) --- */
   function twoChairsPlan() {
@@ -134,7 +135,9 @@
     speechSynthesis.speak(utter);
   }
 
-  function updateRuntime(m){if(!m||!m.responder)return;const src=m.responder==='cloud_ai'?'Облачный ИИ':m.responder==='expert_system'?'Экспертная система':m.responder;runtimeStatus.textContent=`${src}${m.model?' · '+m.model:''}${m.latency_ms?' · '+m.latency_ms+' мс':''}${m.fallback_used?' · резерв':''}`;runtimeStatus.dataset.responder=m.responder;runtimeStatus.classList.toggle('is-fallback',Boolean(m.fallback_used));}
+  function setOfflineMode(on,reason){if(!on||OFFLINE_MODE)return;OFFLINE_MODE=true;try{localStorage.setItem('nt_last_offline',JSON.stringify({at:Date.now(),reason:reason||''}));}catch(_){} if(runtimeStatus){runtimeStatus.textContent='Офлайн-режим · экспертная система';runtimeStatus.dataset.responder='expert_system';runtimeStatus.classList.add('is-offline');}}
+  NTData.health().then((h)=>{if(h&&h.llm_mode==='expert-system')setOfflineMode(true,'no-key');}).catch(()=>{});
+  function updateRuntime(m){if(!m||!m.responder)return;if(m.responder==='expert_system')setOfflineMode(true,'expert-answer');const src=m.responder==='cloud_ai'?'Облачный ИИ':m.responder==='expert_system'?'Экспертная система':m.responder;runtimeStatus.textContent=(m.responder==='expert_system'&&OFFLINE_MODE)?'Офлайн-режим · экспертная система':`${src}${m.model?' · '+m.model:''}${m.latency_ms?' · '+m.latency_ms+' мс':''}${m.fallback_used?' · резерв':''}`;runtimeStatus.dataset.responder=m.responder;runtimeStatus.classList.toggle('is-fallback',Boolean(m.fallback_used));}
 
   /* --- Панели --- */
   function setPanel(name, open) {

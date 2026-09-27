@@ -105,7 +105,7 @@
       </div>
       <p class="tc-analysis-text"><b>${esc(a.confident)}</b></p>
       <ul class="tc-recs">${a.recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
-      <p class="tc-muted">Черновик анализа собран локально из итогов двух раундов${a.mock ? ' (мок до подключения сравнительной модели)' : ''}.</p>`;
+      <p class="tc-muted">Черновик анализа собран локально из итогов двух раундов${a.mock ? ' (мок до подключения сравнительной модели)' : ''}. Работает без внешних сервисов и без API-ключа — в том числе в офлайн-режиме.</p>`;
     $('tc-final-actions').hidden = false;
     bindActions(record, scA);
   }
