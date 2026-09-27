@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="/static/assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<title>Сравнительный анализ — Negotiation Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="/static/css/base.css?v=29" rel="stylesheet"/>
+<link href="/static/css/two-chairs.css?v=1" rel="stylesheet"/>
+</head>
+<body class="tc-compare-body">
+<header class="header"><div class="container header__inner">
+<a class="brand" aria-label="На главную" href="index.html"><span class="brand__logo">N</span><span class="brand__name">Negotiation Lab</span></a>
+<nav aria-label="Разделы" class="handbook-nav"><a href="two-chairs.html">Режим двух стульев</a><a href="stats.html">История</a><a href="profile.html">Профиль</a></nav>
+</div></header>
+<main class="container tc-page" id="tc-compare-root">
+<div class="page-head">
+<p class="page-eyebrow">Режим «Два стула» · финал</p>
+<h1 class="page-head__title" id="tc-compare-title">Обе стороны сыграны</h1>
+</div>
+<div class="tc-loading" id="tc-loading"><span class="tc-loading__spinner" aria-hidden="true"></span><b>Анализируем оба раунда…</b><small>Сравниваем вашу игру в обеих ролях и готовим рекомендации.</small></div>
+<section class="tc-rounds" id="tc-rounds" hidden aria-label="Карточки раундов"></section>
+<section class="tc-card" id="tc-analysis" hidden aria-labelledby="tc-analysis-title">
+<h2 class="tc-card__title" id="tc-analysis-title">Сравнительный анализ</h2>
+<div id="tc-analysis-body"></div>
+</section>
+<section class="tc-actions-row" id="tc-final-actions" hidden>
+<button class="btn btn--primary" id="tc-replay-btn" type="button">Пройти снова</button>
+<a class="btn btn--secondary" href="catalog.html" id="tc-other-btn">Выбрать другой сценарий</a>
+<a class="btn btn--ghost" href="index.html">На главную</a>
+</section>
+<div class="tc-bottom-space" aria-hidden="true"></div>
+</main>
+<script src="/static/js/data.js?v=25"></script>
+<script src="/static/js/two-chairs-compare.js?v=1"></script>
+</body>
+</html>
