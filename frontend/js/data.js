@@ -283,7 +283,7 @@ window.NTData = (function () {
     const prev = record[slot] || {};
     // interest в слот пары кладём уже нормализованным (в процентах) — mapSession
     // это делает сам; поле нужно для бейджа ✓/⚠/✗ в истории и на паузе.
-    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, ended: record.ended, verdict: pairVerdict(record), title: record.title, mode: record.mode, role: record.role || prev.role || null };
+    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, ended: record.ended, verdict: pairVerdict(record), title: record.title, mode: record.mode, role: record.role || prev.role || null, counterpart: record.counterpart || record.opponentRole || prev.counterpart || null };
     if (record.round === 1 && !record.secondRound) record.secondRound = null;
     if (record.round === 2 && !record.firstRound) {
       // Слот первого раунда мог быть создан ранее как заготовка (sessionId: null) —
@@ -300,7 +300,8 @@ window.NTData = (function () {
     // Имя роли пользователя — для карточек сравнения без обращения к плану.
     if (scenario) {
       record.role = scenario.user_role || scenario.userRole || null;
-      record.counterpart = scenario.counterpart || scenario.counterpart_role || null;
+      // scenario из getScenario уже нормализован: counterpart = роль оппонента.
+      record.counterpart = scenario.counterpart || scenario.counterpart_role || (scenario.opponent && scenario.opponent.role) || null;
     }
     if (record.twoChairs) updatePairRounds(record);
     // Важно: читаем историю БЕЗ фильтрации по id — вторая попытка того же

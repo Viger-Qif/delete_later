@@ -37,7 +37,7 @@
     const score = fmtScore(r.score);
     return `<article class="tc-round-card">
       <h3>Диалог ${n} · ${esc(r.title || (sc && sc.title) || 'Сценарий')}</h3>
-      <p class="tc-muted">Ваша роль: <b>${esc((sc && sc.userRole) || r.role || '—')}</b><br>Собеседник: ${esc((sc && sc.counterpart) || '—')}</p>
+      <p class="tc-muted">Ваша роль: <b>${esc((sc && sc.userRole) || r.role || '—')}</b><br>Собеседник: ${esc(r.counterpart || (sc && sc.counterpart) || ((n === 1 ? scB : scA) && (n === 1 ? scB : scA).userRole) || 'Собеседник по ситуации')}</p>
       <p class="tc-verdict ${v.cls}" style="font-size:15px"><span aria-hidden="true">${v.icon}</span> ${esc(v.text)}</p>
       <div class="tc-score-line"><span>Оценка разбора</span><span>${score != null ? score + '/10' : 'без оценки'}</span></div>
       <div class="tc-score-line"><span>Интерес</span><span>${Number(r.interest) || 0}%</span></div>
@@ -53,16 +53,20 @@
     </div>`;
   }
 
-  /* Анализ читает ТОЛЬКО слоты merged-записи (r1/r2) */
+  /* Анализ читает ТОЛЬКО слоты merged-записи (r1/r2).
+     Формула: interest + score/2. При одинаковых оценках разбора
+     (локальный emergency-fallback часто даёт равные баллы) разница
+     определяется заинтересованностью — бары и вывод не противоречат друг другу. */
   function analysisText(r1, r2, roleA, roleB) {
     const i1 = Number(r1.interest) || 0;
     const i2 = Number(r2.interest) || 0;
     const s1 = Number(r1.score) || 0;
     const s2 = Number(r2.score) || 0;
     const diff = (i2 + s2 / 2) - (i1 + s1 / 2);
+    const sameScore = s1 > 0 && s1 === s2;
     const confident = Math.abs(diff) < 8 ? 'В обеих ролях вы держались примерно одинаково уверенно.'
-      : diff > 0 ? `Во второй роли (${roleB}) вы держались увереннее.`
-      : `В первой роли (${roleA}) вы держались увереннее.`;
+      : diff > 0 ? `Во второй роли (${roleB}) вы держались увереннее${sameScore ? ' — при той же оценке разбора шкала заинтересованности выше' : ''}.`
+      : `В первой роли (${roleA}) вы держались увереннее${sameScore ? ' — при той же оценке разбора шкала заинтересованности выше' : ''}.`;
     const recs = [];
     if (diff > 0) recs.push(`Перенесите приёмы из роли «${roleB}» (давление сроками, встречные предложения) в позицию «${roleA}».`);
     else if (diff < 0) recs.push(`Приёмы, которые сработали в роли «${roleA}», стоит применить зеркально, когда вы в позиции «${roleB}».`);
