@@ -23,13 +23,32 @@ def get_scenario(db: Session, scenario_id: str) -> Scenario | None:
     # сценарий пропал (перезапуск сервера, пересозданная БД), молча
     # воссоздаём его из базового и кэшируем. 404 остаётся только для
     # реально несуществующих базовых id.
+    #
+    # ВАЖНО (баг, из-за которого восстановление не срабатывало): восстановленный
+    # сценарий создавался с published=False (см. Scenario.inverted) и owner_id
+    # "guest". GET /api/scenarios/{id} отклоняет неопубликованный сценарий,
+    # если его owner != текущий пользователь, — то есть строка в БД появлялась,
+    # но эндпоинт всё равно отдавал 404. Теперь восстановленная копия наследует
+    # published/owner_id базового сценария.
     if scenario_id and scenario_id.endswith(TC_SUFFIX):
         base_id = scenario_id[: -len(TC_SUFFIX)]
         base_row = db.get(ScenarioRow, base_id)
+        print(f"[two-chairs] get_scenario({scenario_id!r}): строки нет в БД; "
+              f"базовый {base_id!r} {'найден' if base_row is not None else 'НЕ найден'} — "
+              f"пробуем восстановить через inverted()", flush=True)
         if base_row is not None:
             try:
                 inverted = row_to_scenario(base_row).inverted()
+                # Инвертированный сценарий служебный: наследует владельца и
+                # флаг публикации базового, иначе GET /api/scenarios/{id}
+                # отфильтрует его как чужой/неопубликованный и вернёт 404,
+                # даже после успешного восстановления строки.
+                inverted.owner_id = base_row.owner_id or "system"
+                inverted.published = bool(base_row.published)
                 create_scenario(db, inverted)
+                print(f"[two-chairs] восстановлен инвертированный сценарий "
+                      f"{scenario_id!r} из {base_id!r} (owner={inverted.owner_id}, "
+                      f"published={inverted.published})", flush=True)
                 logger.info("two-chairs: восстановлен инвертированный сценарий %s из %s", scenario_id, base_id)
                 return inverted
             except IntegrityError:
@@ -37,9 +56,11 @@ def get_scenario(db: Session, scenario_id: str) -> Scenario | None:
                 db.rollback()
                 row = db.get(ScenarioRow, scenario_id)
                 if row is not None:
+                    print(f"[two-chairs] гонка: {scenario_id!r} уже создан параллельным запросом", flush=True)
                     return row_to_scenario(row)
             except Exception:  # не роняем обычный 404 из-за сбоя восстановления
                 db.rollback()
+                print(f"[two-chairs] СБОЙ восстановления {scenario_id!r}", flush=True)
                 logger.exception("two-chairs: не удалось восстановить инвертированный сценарий %s", scenario_id)
     return None
 
