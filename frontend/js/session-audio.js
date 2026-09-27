@@ -556,12 +556,27 @@
     applyDifficultyUI();
     return;
   }
-  Promise.all([
-    NTData.getScenario(scenarioId),
-    NTData.resumeOrCreateSession(scenarioId,'audio',DIFFICULTY,TARGET_TURNS,ENGINE_MODE),
-    NTData.knowledgeStatus().catch(() => ({ enabled: false, chunks: 0 }))
-  ]).then(([sc, sess, rag]) => {
-    if (!sc || !sess) throw new Error('Не удалось начать сессию.');
+  function scenarioErrorState(message) {
+    const wrap = document.querySelector('.chat') || document.body;
+    const box = document.createElement('div');
+    box.className = 'scenario-error';
+    box.style.cssText = 'margin:auto;max-width:420px;text-align:center;padding:32px;display:flex;flex-direction:column;gap:16px;align-items:center';
+    box.innerHTML = '<p style="font-size:18px;font-weight:700">Сценарий не удалось загрузить</p>' +
+      `<p>${esc(message || 'Сценарий не найден. Возможно, он был удалён или недоступен.')}</p>` +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+      (TC_PLAN ? '<a class="btn btn--primary" style="min-height:44px" href="two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId) + '">Вернуться к паузе</a>' : '') +
+      '<a class="btn" style="min-height:44px" href="index.html">На главную</a></div>';
+    if (wrap && wrap.parentNode) wrap.replaceWith(box); else document.body.appendChild(box);
+  }
+  NTData.getScenario(scenarioId).then((sc) => {
+    if (!sc) throw Object.assign(new Error('Сценарий не найден. Он мог быть создан в другой сессии сервера — вернитесь к паузе режима «Два стула» и начните диалог заново.'), { scenarioMissing: true });
+    return Promise.all([
+      sc,
+      NTData.resumeOrCreateSession(scenarioId,'audio',DIFFICULTY,TARGET_TURNS,ENGINE_MODE),
+      NTData.knowledgeStatus().catch(() => ({ enabled: false, chunks: 0 }))
+    ]);
+  }).then(([sc, sess, rag]) => {
+    if (!sess) throw new Error('Не удалось начать сессию.');
     scenario = sc;
     session=sess;NTSecretary.idle();runtimeStatus.textContent=ENGINE_MODE==='expert'?'Экспертная система выбрана':ENGINE_MODE==='cloud'?'Только облачный ИИ':'Авто: ИИ → эксперт';
 
@@ -595,7 +610,8 @@
     const greeting = [...(session.messages || [])].reverse().find((m) => m.role === 'opponent');
     botSpeak(greeting ? greeting.content : 'Здравствуйте, я на связи. Слушаю вас.');
   }).catch((error) => {
-    captionEl.textContent = error.message;
+    if (error && error.scenarioMissing) scenarioErrorState(error.message);
+    else captionEl.textContent = error.message;
   });
 })();
 

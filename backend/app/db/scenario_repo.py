@@ -1,10 +1,47 @@
 """Репозиторий сценариев: CRUD поверх SQLAlchemy."""
 from __future__ import annotations
 
+import logging
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.database import ScenarioRow
 from app.models.scenario import Difficulty, Graph, Interest, Persona, Scenario
+
+logger = logging.getLogger(__name__)
+
+TC_SUFFIX = "_tc"  # детерминированный суффикс инвертированного сценария (см. Scenario.inverted)
+
+
+def get_scenario(db: Session, scenario_id: str) -> Scenario | None:
+    row = db.get(ScenarioRow, scenario_id)
+    if row is not None:
+        return row_to_scenario(row)
+    # Самоисцеление режима «Два стула»: id вида <base>_tc детерминированно
+    # выводится из базового сценария через inverted(). Если инвертированный
+    # сценарий пропал (перезапуск сервера, пересозданная БД), молча
+    # воссоздаём его из базового и кэшируем. 404 остаётся только для
+    # реально несуществующих базовых id.
+    if scenario_id and scenario_id.endswith(TC_SUFFIX):
+        base_id = scenario_id[: -len(TC_SUFFIX)]
+        base_row = db.get(ScenarioRow, base_id)
+        if base_row is not None:
+            try:
+                inverted = row_to_scenario(base_row).inverted()
+                create_scenario(db, inverted)
+                logger.info("two-chairs: восстановлен инвертированный сценарий %s из %s", scenario_id, base_id)
+                return inverted
+            except IntegrityError:
+                # гонка двух параллельных запросов — забираем существующую строку
+                db.rollback()
+                row = db.get(ScenarioRow, scenario_id)
+                if row is not None:
+                    return row_to_scenario(row)
+            except Exception:  # не роняем обычный 404 из-за сбоя восстановления
+                db.rollback()
+                logger.exception("two-chairs: не удалось восстановить инвертированный сценарий %s", scenario_id)
+    return None
 
 
 def row_to_scenario(row: ScenarioRow) -> Scenario:
@@ -65,11 +102,6 @@ def scenario_to_row(sc: Scenario, row: ScenarioRow | None = None) -> ScenarioRow
     row.two_chairs_pair = sc.two_chairs_pair
     row.inverted_of = sc.inverted_of
     return row
-
-
-def get_scenario(db: Session, scenario_id: str) -> Scenario | None:
-    row = db.get(ScenarioRow, scenario_id)
-    return row_to_scenario(row) if row else None
 
 
 def list_scenarios(

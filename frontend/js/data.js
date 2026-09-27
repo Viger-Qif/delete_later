@@ -227,7 +227,18 @@ window.NTData = (function () {
       // Own unpublished scenarios are intentionally absent from the public
       // catalog.  Ask the protected detail endpoint as a fallback so a user
       // can still open a draft from the profile page.
-      return api(`/scenarios/${encodeURIComponent(id)}`).then(mapScenario).catch(() => null);
+      return api(`/scenarios/${encodeURIComponent(id)}`).then(mapScenario).catch((error) => {
+        // Самоисцеление «Два стула»: инвертированный сценарий мог исчезнуть
+        // после перезапуска сервера. Если это id партнёра из активного плана
+        // пары — просим бэкенд пересоздать пару и повторяем загрузку один раз.
+        if (error && error.status !== 404) return null;
+        const plan = getTwoChairsPlan();
+        if (plan && plan.pairId && id === plan.invertedId) {
+          return fetchTwoChairsPair(plan.pairId)
+            .then(() => api(`/scenarios/${encodeURIComponent(id)}`).then(mapScenario).catch(() => null));
+        }
+        return null;
+      });
     });
   }
 
