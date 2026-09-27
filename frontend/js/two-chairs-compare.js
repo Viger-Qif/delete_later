@@ -2,16 +2,33 @@
    Экран сравнительного анализа «Два стула» (two-chairs-compare.html).
    ЕДИНЫЙ источник данных — merged-запись пары (NTData.findTwoChairsRecord):
    и карточки раундов, и сравнительный анализ читают только firstRound/
-   secondRound этой записи. Сценарии (роли) подтягиваются с бэкенда только
-   для подписей ролей; при недоступности — имена ролей из самой записи.
-   Пока умная модель не подключена — текст анализа формируется локально
-   из разницы оценок и интереса (мок помечен в UI).
+   secondRound этой записи. Это статичные данные из записи пары — они
+   рендерятся СРАЗУ при загрузке страницы, БЕЗ ожидания каких-либо промисов.
+
+   Порядок работы (анти-регрессия «вечного спиннера»):
+   1. Карточки раундов + анализ по мок-логике (разница оценок/интереса)
+      рисуются синхронно — мок работает ВСЕГДА, даже без сервера и модели.
+   2. Спиннер «Анализируем оба раунда…» остаётся в DOM только пока идёт
+      попытка получить умный анализ с бэкенда (/api/chat/completions). Он
+      удаляется через removeChild либо по завершению запроса, либо по
+      жёсткому таймауту SPIN_TIMEOUT_MS (2 секунды) — что наступит раньше.
+   3. Если модель недоступна (офлайн / нет ключа / таймаут / ошибка сети) —
+      на экране остаются карточки + мок-анализ + плашка «Черновик анализа
+      собран локально…». Ничего не блокирует отрисовку.
+   Сценарии (роли) подтягиваются с бэкенда только для подписей ролей;
+   при недоступности — имена ролей из самой записи.
    ============================================================ */
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const params = new URLSearchParams(location.search);
+
+  /* Жёсткий потолок жизни спиннера: дольше 2 секунд он не крутится НИКОГДА,
+     даже если запрос к модели завис. */
+  const SPIN_TIMEOUT_MS = 2000;
+  /* Таймаут самого запроса к модели — чуть меньше потолка спиннера. */
+  const MODEL_TIMEOUT_MS = 1900;
 
   /* Оценка хранится на сервере в шкале 0–100; в UI везде показываем /10. */
   function fmtScore(value) {
@@ -76,47 +93,132 @@
     return { confident, recs, mock: true };
   }
 
-  /* Спиннер удаляется из DOM безусловно (remove(), а не hidden/display),
-     чтобы через 3 секунды узла .tc-loading на странице не было. */
+  /* Спиннер удаляется из DOM безусловно (removeChild, а не hidden/display),
+     чтобы через фиксированное время узла #tc-loading на странице не было. */
+  let spinnerRemoved = false;
   function hideLoading() {
+    if (spinnerRemoved) return;
     const el = $('tc-loading');
     if (el && el.parentNode) el.parentNode.removeChild(el);
+    spinnerRemoved = true;
   }
 
+  function renderAnalysis(html) {
+    $('tc-analysis').hidden = false;
+    $('tc-analysis-body').innerHTML = html;
+  }
+
+  /* Плашка «работает без API-ключа» — та же, что была на прошлом скрине. */
+  const OFFLINE_NOTE = 'Черновик анализа собран локально из итогов двух раундов. ' +
+    'Работает без внешних сервисов и без API-ключа — в том числе в офлайн-режиме.';
+
+  function barsHtml(roleA, roleB) {
+    const i1 = Number(rounds.r1.interest) || 0;
+    const i2 = Number(rounds.r2.interest) || 0;
+    return `<div class="tc-bars">
+        ${bar('Заинтересованность собеседника — диалог 1 (' + roleA + ')', i1, false)}
+        ${bar('Заинтересованность собеседника — диалог 2 (' + roleB + ')', i2, true)}
+      </div>`;
+  }
+
+  function mockHtml(a, offlineOnly) {
+    /* Плашка всегда видна в мок-ветке; в офлайне добавляем явную пометку. */
+    return `<p class="tc-analysis-text"><b>${esc(a.confident)}</b></p>
+      <ul class="tc-recs">${a.recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+      <p class="tc-muted">${esc(OFFLINE_NOTE)}${offlineOnly ? ' Сейчас сервер/модель недоступны — анализ полностью локальный.' : ' (мок до подключения сравнительной модели)'}</p>`;
+  }
+
+  /* --- Прерванный режим: только раунд 1. Рендер СРАЗУ, спиннера нет. --- */
   function renderIncomplete(record, rounds, scA, scB) {
     hideLoading();
     $('tc-compare-title').textContent = (record.title || 'Сценарий') + ' — диалог 2 ещё не завершён';
     $('tc-rounds').hidden = false;
     $('tc-rounds').innerHTML = roundCard(1, rounds.r1, scA) + roundCard(2, rounds.r2, scB);
-    $('tc-analysis').hidden = false;
-    $('tc-analysis-body').innerHTML = '<p class="tc-muted">Полный сравнительный анализ появится после второго раунда. ' +
-      '<a href="two-chairs-pause.html?pair=' + encodeURIComponent(record.pairId || '') + '">Вернуться к паузе</a>.</p>';
+    renderAnalysis('<p class="tc-muted">Полный сравнительный анализ появится после второго раунда. ' +
+      '<a href="two-chairs-pause.html?pair=' + encodeURIComponent(record.pairId || '') + '">Вернуться к паузе</a>.</p>');
     $('tc-final-actions').hidden = false;
     bindActions(record, scA);
   }
 
-  function renderComplete(record, rounds, scA, scB) {
-    hideLoading();
+  /* --- Полный режим. Шаг 1: СИНХРОННЫЙ рендер карточек + мок-анализа. ---
+     Никаких промисов до этого момента: пользователь видит контент сразу. */
+  function renderStatic(record, rounds) {
     $('tc-compare-title').textContent = (record.title || 'Сценарий') + ' — две стороны сыграны';
     $('tc-rounds').hidden = false;
-    $('tc-rounds').innerHTML = roundCard(1, rounds.r1, scA) + roundCard(2, rounds.r2, scB);
+    $('tc-rounds').innerHTML = roundCard(1, rounds.r1, null) + roundCard(2, rounds.r2, null);
+    const a = analysisText(rounds.r1, rounds.r2, rounds.r1.role || 'роль А', rounds.r2.role || 'роль Б');
+    renderAnalysis(barsHtml(rounds.r1.role || 'роль А', rounds.r2.role || 'роль Б') + mockHtml(a, false));
+    $('tc-final-actions').hidden = false;
+    bindActions(record, null);
+  }
 
+  /* Шаг 2 (опциональный): попытка получить умный анализ с модели. Спиннер
+     остаётся в DOM только на время этого запроса и снимается по завершении
+     ИЛИ по таймауту SPIN_TIMEOUT_MS — что наступит раньше. При отказе
+     модели на экране уже стоят карточки + мок + плашка. */
+  let modelFailed = false;
+  let modelSettled = false;
+
+  function finishSpin(ok, payload) {
+    if (modelSettled) return;
+    modelSettled = true;
+    hideLoading(); // спиннер уходит в любом случае
+    if (!ok || !payload || !payload.confident) return; // оставляем мок
+    const roleA = rounds.r1.role || 'роль А';
+    const roleB = rounds.r2.role || 'роль Б';
+    const recs = Array.isArray(payload.recs) && payload.recs.length
+      ? payload.recs
+      : analysisText(rounds.r1, rounds.r2, roleA, roleB).recs;
+    renderAnalysis(`${barsHtml(roleA, roleB)}
+        <p class="tc-analysis-text"><b>${esc(payload.confident)}</b></p>
+        <ul class="tc-recs">${recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`);
+  }
+
+  function requestModelAnalysis() {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
+    fetch('/api/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        task: 'two_chairs_compare',
+        messages: [{ role: 'user', content: 'Сравни два раунда: ' + JSON.stringify({ r1: rounds.r1, r2: rounds.r2 }) }],
+        max_tokens: 400,
+        temperature: 0.3
+      })
+    })
+      .then((res) => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+      .then((data) => {
+        clearTimeout(timer);
+        let txt = '';
+        try { txt = String(data.choices?.[0]?.message?.content || data.content || ''); } catch (_) {}
+        if (!txt.trim()) throw new Error('empty model reply');
+        finishSpin(true, { confident: txt.trim(), recs: null });
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        modelFailed = true;
+        finishSpin(false, null); // мок + плашка уже отрисованы
+      });
+    /* Жёсткая страховка: даже если fetch завис и ни then, ни catch не пришли —
+       ровно через 2 секунды спиннер гарантированно удалён из DOM. */
+    setTimeout(() => { modelFailed = true; finishSpin(false, null); }, SPIN_TIMEOUT_MS);
+  }
+
+  /* Подтягиваем подписи ролей с бэкенда — только для красоты подписей в
+     УЖЕ отрисованных карточках. На видимость контента НЕ влияет: при
+     недоступности сервера имена ролей остаются из записи пары. */
+  function refineLabels(scA, scB) {
+    if (!scA && !scB) return;
     const roleA = (scA && scA.userRole) || rounds.r1.role || 'роль А';
     const roleB = (scB && scB.userRole) || rounds.r2.role || 'роль Б';
-    const a = analysisText(rounds.r1, rounds.r2, roleA, roleB);
-    const i1 = Number(rounds.r1.interest) || 0;
-    const i2 = Number(rounds.r2.interest) || 0;
-    $('tc-analysis').hidden = false;
-    $('tc-analysis-body').innerHTML = `
-      <div class="tc-bars">
-        ${bar('Заинтересованность собеседника — диалог 1 (' + roleA + ')', i1, false)}
-        ${bar('Заинтересованность собеседника — диалог 2 (' + roleB + ')', i2, true)}
-      </div>
-      <p class="tc-analysis-text"><b>${esc(a.confident)}</b></p>
-      <ul class="tc-recs">${a.recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
-      <p class="tc-muted">Черновик анализа собран локально из итогов двух раундов${a.mock ? ' (мок до подключения сравнительной модели)' : ''}. Работает без внешних сервисов и без API-ключа — в том числе в офлайн-режиме.</p>`;
-    $('tc-final-actions').hidden = false;
+    $('tc-rounds').innerHTML = roundCard(1, rounds.r1, scA) + roundCard(2, rounds.r2, scB);
     bindActions(record, scA);
+    /* Бары пересобираем с новыми подписями, ТЕКСТ анализа не трогаем:
+       если модель уже ответила — оставляем её вывод, иначе — мок. */
+    const barsOld = document.querySelector('#tc-analysis-body .tc-bars');
+    if (barsOld) barsOld.outerHTML = barsHtml(roleA, roleB);
   }
 
   function bindActions(record, scA) {
@@ -146,17 +248,20 @@
 
   // Нормализованные слоты — единственный источник правды о сыгранных раундах.
   const rounds = NTData.pairRounds(record);
+  /* Базовый сценарий: id из плана, id пары или id первой записи сессии
+     (старые записи могли сохранить пару под id базового сценария). */
   const scenarioIds = [
-    (plan && plan.scenarioId) || record.pairId,
+    (plan && plan.scenarioId) || record.pairId || record.id,
     (plan && plan.invertedId) || null
   ];
 
+  /* Страховка от перезапуска сервера: если инвертированный сценарий пропал,
+     GET /two-chairs молча воссоздаёт пару из базового. Используется ТОЛЬКО
+     как фоновое уточнение подписей — никогда как блокировка рендера. */
   function loadScenarios() {
-    return Promise.all(scenarioIds.map((id) => (id ? NTData.getScenario(id).catch(() => null) : null)));
+    return Promise.all(scenarioIds.map((id) => (id ? NTData.getScenario(id).catch(() => null) : Promise.resolve(null))));
   }
 
-  /* Страховка от перезапуска сервера: если инвертированный сценарий пропал,
-     GET /two-chairs молча воссоздаёт пару из базового. */
   function ensurePairThen(fn) {
     return loadScenarios().then(([scA, scB]) => {
       if (!scB && scA) {
@@ -169,17 +274,24 @@
   }
 
   if (!rounds.complete) {
-    // Прерванный режим: без спиннера, без бара диалога 2, со ссылкой на паузу.
-    ensurePairThen((scA, scB) => renderIncomplete(record, rounds, scA, scB));
+    /* Прерванный режим: карточки + текст со ссылкой «Вернуться к паузе»
+       рисуются СРАЗУ (без промисов), спиннера нет. Подписи ролей
+       подтягиваются фоном и только до того, как пользователь ушёл. */
+    renderIncomplete(record, rounds, null, null);
+    ensurePairThen((scA, scB) => {
+      if (spinnerRemoved) {
+        $('tc-rounds').innerHTML = roundCard(1, rounds.r1, scA) + roundCard(2, rounds.r2, scB);
+        bindActions(record, scA);
+      }
+    });
     return;
   }
 
-  /* Состояние загрузки живёт ровно ~1.2с (мок-задержка), затем спиннер
-     УДАЛЯЕТСЯ из DOM — обе ветки вызывают hideLoading через render*. */
-  let settled = false;
-  const done = (fn) => (args) => { if (settled) return; settled = true; fn(...args); };
-  Promise.all([new Promise((resolve) => setTimeout(resolve, 1200)), ensurePairThen(done((a, b) => renderComplete(record, rounds, a, b)))])
-    .catch(done(() => renderComplete(record, rounds, null, null)));
-  // Страховка: если что-то зависло — спиннер всё равно исчезнет.
-  setTimeout(() => { if (!settled) { settled = true; renderComplete(record, rounds, null, null); } }, 6000);
+  /* Полный режим:
+     1) СИНХРОННО рисуем карточки и мок-анализ (контент гарантирован всегда);
+     2) запускаем запрос к модели — спиннер живёт не дольше SPIN_TIMEOUT_MS;
+     3) параллельно фоном уточняем подписи ролей из сценариев. */
+  renderStatic(record, rounds);
+  requestModelAnalysis();
+  ensurePairThen(refineLabels);
 })();
