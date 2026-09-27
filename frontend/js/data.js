@@ -550,6 +550,14 @@ window.NTData = (function () {
     return api(`/scenarios/${encodeURIComponent(scenarioId)}/two-chairs`, { method: 'POST' })
       .then((data) => ({ scenario: mapScenario(data.scenario), inverted: mapScenario(data.inverted), created: data.created }));
   }
+  /* GET-вариант: возвращает пару и молча воссоздаёт инвертированный
+     сценарий, если он пропал после перезапуска сервера. Используется
+     экранами паузы/сравнения как страховка от «inverted не найден». */
+  function fetchTwoChairsPair(scenarioId) {
+    scenarioCache = null;
+    return api(`/scenarios/${encodeURIComponent(scenarioId)}/two-chairs`)
+      .then((data) => ({ scenario: mapScenario(data.scenario), inverted: mapScenario(data.inverted), created: data.created }));
+  }
   function saveTwoChairsPlan(plan) {
     try { localStorage.setItem(TWO_CHAIRS_PLAN_KEY, JSON.stringify(plan)); } catch (_) {}
     return plan;
@@ -683,7 +691,7 @@ window.NTData = (function () {
     listSessions, listResults, getSession, getSessionResult,
     openSession, loadSession, resumeOrCreateSession, playTurn, analyzeResult, askHint, abandonSession,
     generateScenario, refineScenario, listEditableScenarios, createScenario, updateScenario, validateScenario,
-    publishScenario, createTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
+    publishScenario, createTwoChairsPair, fetchTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
     findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, pairVerdict, pairRounds, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
     listLocalHistory, prunePairDuplicates,
     health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,

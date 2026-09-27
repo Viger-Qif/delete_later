@@ -5,7 +5,12 @@
    компенсируется заглушкой .tc-bottom-space.
    ============================================================ */
 .tc-page { padding-bottom: 24px; }
-.tc-lead { max-width: 62ch; color: var(--text-muted, #5b6770); line-height: 1.55; }
+/* Hero-контейнеры: заголовок и описание лежат в одном центрированном
+   блоке (margin:0 auto; text-align:center; max-width ~720px), поэтому
+   оси центрирования совпадают на любой ширине (2560px и 390px). */
+.tc-lead { max-width: 720px; margin: 8px auto 0; text-align: center; color: var(--text-muted, #5b6770); line-height: 1.55; }
+.page-head > .page-eyebrow { margin: 0 auto; text-align: center; max-width: 720px; }
+.page-head > h1 + p:not([class]) , .page-head > p.desc { max-width: 720px; margin: 8px auto 0; text-align: center; }
 .tc-card {
   background: var(--surface, #fff);
   border: 1px solid rgba(16, 34, 28, .08);

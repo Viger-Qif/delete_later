@@ -104,6 +104,17 @@
           targetTurns: 10, round: 2, round1Done: true, round2Done: false };
         NTData.saveTwoChairsPlan(plan);
       }
+      if (plan && !invSc && baseSc) {
+        // Инвертированный сценарий пропал (например, после перезапуска
+        // сервера с новой БД) — просим бэкенд воссоздать пару и повторяем.
+        return NTData.fetchTwoChairsPair(plan.scenarioId)
+          .then((pair) => {
+            plan.invertedId = pair.inverted.id;
+            NTData.saveTwoChairsPlan(plan);
+            render(record, pair.scenario || baseSc, pair.inverted);
+          })
+          .catch(() => render(record, baseSc, null));
+      }
       render(record, baseSc, invSc);
     })
     .catch(() => render(record, null, null));

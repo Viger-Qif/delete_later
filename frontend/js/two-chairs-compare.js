@@ -76,7 +76,12 @@
     return { confident, recs, mock: true };
   }
 
-  function hideLoading() { $('tc-loading').hidden = true; }
+  /* Спиннер удаляется из DOM безусловно (remove(), а не hidden/display),
+     чтобы через 3 секунды узла .tc-loading на странице не было. */
+  function hideLoading() {
+    const el = $('tc-loading');
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
 
   function renderIncomplete(record, rounds, scA, scB) {
     hideLoading();
@@ -150,19 +155,30 @@
     return Promise.all(scenarioIds.map((id) => (id ? NTData.getScenario(id).catch(() => null) : null)));
   }
 
+  /* Страховка от перезапуска сервера: если инвертированный сценарий пропал,
+     GET /two-chairs молча воссоздаёт пару из базового. */
+  function ensurePairThen(fn) {
+    return loadScenarios().then(([scA, scB]) => {
+      if (!scB && scA) {
+        return NTData.fetchTwoChairsPair(scA.id)
+          .then((pair) => fn(scA, pair.inverted))
+          .catch(() => fn(scA, null));
+      }
+      return fn(scA, scB);
+    }).catch(() => fn(null, null));
+  }
+
   if (!rounds.complete) {
     // Прерванный режим: без спиннера, без бара диалога 2, со ссылкой на паузу.
-    loadScenarios().then(([scA, scB]) => renderIncomplete(record, rounds, scA, scB))
-      .catch(() => renderIncomplete(record, rounds, null, null));
+    ensurePairThen((scA, scB) => renderIncomplete(record, rounds, scA, scB));
     return;
   }
 
-  /* Состояние загрузки живёт ровно ~1.2с (мок-задержка), затем скрывается
-     безусловно — обе ветки then/catch вызывают hideLoading через render*. */
+  /* Состояние загрузки живёт ровно ~1.2с (мок-задержка), затем спиннер
+     УДАЛЯЕТСЯ из DOM — обе ветки вызывают hideLoading через render*. */
   let settled = false;
   const done = (fn) => (args) => { if (settled) return; settled = true; fn(...args); };
-  Promise.all([loadScenarios(), new Promise((resolve) => setTimeout(resolve, 1200))])
-    .then(done(([pair, sc]) => renderComplete(record, rounds, pair[0], pair[1])))
+  Promise.all([new Promise((resolve) => setTimeout(resolve, 1200)), ensurePairThen(done((a, b) => renderComplete(record, rounds, a, b)))])
     .catch(done(() => renderComplete(record, rounds, null, null)));
   // Страховка: если что-то зависло — спиннер всё равно исчезнет.
   setTimeout(() => { if (!settled) { settled = true; renderComplete(record, rounds, null, null); } }, 6000);
