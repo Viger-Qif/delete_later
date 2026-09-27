@@ -1,0 +1,190 @@
+/* ============================================================
+   Страница 7: история переговоров (stats.html).
+   ============================================================ */
+
+.stats-page {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  max-width: 768px;
+  margin: 0 auto;
+  padding-top: 32px;
+  padding-bottom: 96px;
+}
+
+/* --- Сводка --- */
+.stats-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stat-card__value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+/* Мини-график интереса */
+.spark-wrap {
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.spark-title {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 64px;
+}
+
+.spark__col {
+  flex: 1;
+  min-height: 6px;
+  background: var(--accent);
+  opacity: .8;
+  border-radius: 6px 6px 0 0;
+  transition: opacity var(--dur-2) var(--ease-standard);
+}
+
+.spark__col:hover { opacity: 1; }
+
+/* --- Список сессий --- */
+.stats-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 2px 12px;
+}
+
+.stats-list-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stats-list-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur-2) var(--ease-standard), box-shadow var(--dur-2) var(--ease-standard), transform var(--dur-2) var(--ease-standard);
+}
+
+.record:hover {
+  border-color: rgba(35, 107, 86, .45);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.record__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+
+.record__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.record__title {
+  font-weight: 600;
+  font-size: 14.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.record__meta {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.record__stat {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.record__stat--interest {
+  min-width: 44px;
+  text-align: right;
+  color: var(--accent-strong);
+}
+
+.record__chevron { color: #B7C2CE; }
+
+.stats-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .record { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .record__stat { display: none; }
+  .record__stat--interest { display: block; }
+}

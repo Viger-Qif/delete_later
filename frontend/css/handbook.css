@@ -1,0 +1,217 @@
+/* ============================================================
+   СПРАВОЧНИК: каталог (handbook.html) и страница методики (method.html).
+   Шапка, логотип, кнопка «назад» и поиск — из base.css без переопределений,
+   чтобы страницы выглядели так же, как каталог сценариев.
+   ============================================================ */
+
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.page-eyebrow { margin: 0; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.list-meta { margin: 0 0 14px; color: var(--text-muted); font-size: 13px; }
+
+/* --- Каталог --- */
+.handbook { padding-top: 24px; padding-bottom: 96px; }
+.handbook__intro { max-width: 720px; margin-bottom: 24px; }
+.handbook__intro h2 { margin: 8px 0 10px; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; letter-spacing: -.03em; }
+.handbook__intro p:last-child { margin: 0; color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+
+.handbook__toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.handbook__search { flex: 1 1 auto; min-width: 0; }
+.handbook__search > svg { left: 14px; }
+.handbook__search input { height: 44px; padding-left: 40px; font-size: 15px; }
+.handbook__select { position: relative; flex: 0 0 220px; }
+.handbook__select::after {
+  content: ""; position: absolute; right: 14px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
+  border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(45deg); pointer-events: none;
+}
+.handbook__select select {
+  width: 100%; height: 44px; padding: 0 36px 0 14px; appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm);
+  font: inherit; font-size: 14px; color: var(--text); cursor: pointer;
+}
+.handbook__select select:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+
+.handbook-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+.method-card {
+  display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 22px;
+  border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm);
+  color: var(--text); overflow-wrap: anywhere;
+  transition: transform var(--dur-2) var(--ease-standard), box-shadow var(--dur-2) var(--ease-standard), border-color var(--dur-2) var(--ease-standard);
+}
+.method-card:hover { transform: translateY(-2px); border-color: rgba(35, 107, 86, .35); box-shadow: var(--shadow-md); }
+.method-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-lg); }
+.method-card__head { display: flex; align-items: center; gap: 12px; }
+.method-card__icon {
+  display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 16px;
+}
+.method-card__meta { color: var(--accent); font-size: 12.5px; font-weight: 600; }
+.method-card__title { display: block; font-size: 19px; font-weight: 700; line-height: 1.3; letter-spacing: -.01em; }
+.method-card__lead { display: block; color: var(--text-muted); font-size: 14px; line-height: 1.55; }
+.method-card__chips { margin-top: auto; padding-top: 4px; }
+.method-card__chips .chip { color: var(--accent-strong); }
+.method-card__open { color: var(--accent); font-size: 13.5px; font-weight: 600; }
+.method-card:hover .method-card__open span { display: inline-block; transform: translateX(3px); transition: transform var(--dur-2) var(--ease-standard); }
+
+.handbook-empty { grid-column: 1 / -1; padding: 40px 20px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.handbook-empty__title { margin: 0 0 6px; color: var(--text); font-weight: 600; font-size: 16px; }
+.handbook-empty p { margin: 0 0 10px; }
+
+/* Появление задаёт base.css; сохраняем подъём карточки при наведении. */
+.js .method-card[data-reveal].is-visible:hover { transform: translateY(-2px); }
+
+/* --- Страница методики --- */
+.method-page .page-head__title { font-size: 15px; font-weight: 600; color: var(--text-muted); }
+.method { padding-top: 20px; padding-bottom: 96px; }
+.method-hero {
+  padding: 36px 40px; border: 1px solid var(--border); border-radius: 18px;
+  background: linear-gradient(135deg, #fff 0%, #f7fbf9 70%, #edf7f2 100%); box-shadow: var(--shadow-sm);
+}
+.method-hero h1 { max-width: 780px; margin: 12px 0 14px; font-size: clamp(28px, 4.4vw, 44px); line-height: 1.1; letter-spacing: -.035em; }
+.method-hero__lead { max-width: 720px; margin: 0; font-size: 18px; line-height: 1.55; color: #46504b; }
+.method-hero__promise { max-width: 720px; margin: 16px 0 0; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--accent-tint); color: var(--accent-strong); font-size: 14.5px; }
+.method-hero__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 24px; }
+.method-hero__foot .btn { min-height: 44px; }
+.method-hero__meta { color: var(--text-muted); font-size: 13.5px; }
+.method-hero__chips { margin-top: 16px; }
+
+.method-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px; align-items: start; margin-top: 36px; }
+.method-toc { position: sticky; top: calc(var(--header-h) + 16px); display: grid; }
+.method-toc__title { margin: 0 0 10px; color: var(--text-muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.method-toc a { padding: 7px 12px; border-left: 2px solid var(--border); color: var(--text-muted); font-size: 14px; }
+.method-toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+.method-article { min-width: 0; max-width: 780px; overflow-wrap: anywhere; }
+.method-article > section { margin-bottom: 52px; scroll-margin-top: calc(var(--header-h) + 20px); }
+.method-article h2 { margin: 0 0 14px; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; }
+.method-article h3 { margin: 0 0 8px; font-size: 17px; line-height: 1.3; }
+.method-article p { margin: 0 0 14px; }
+.method-lead { color: #4f5a55; font-size: 16.5px; }
+.method-callout { padding: 18px 20px; border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0; background: var(--accent-tint); font-size: 16.5px; line-height: 1.6; }
+.method-rule { display: flex; gap: 14px; margin-top: 16px; padding: 14px 18px; border: 1px solid #d6e5f5; border-radius: 12px; background: #eaf2fb; }
+.method-rule b { flex: none; color: #2c6fbb; }
+
+.method-twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.method-panel { padding: 18px 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.method-panel h3 { display: flex; align-items: center; gap: 8px; }
+.method-panel h3::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+.method-panel--no h3::before { background: var(--danger); }
+.method-bullets { margin: 0; padding-left: 18px; color: #3e4944; }
+.method-bullets li { margin: 7px 0; }
+
+.method-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.method-step { padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.method-step__num { display: block; margin-bottom: 6px; color: var(--accent); font-size: 12px; font-weight: 700; }
+.method-step p { color: var(--text-muted); font-size: 14px; }
+.method-step p:last-child { margin-bottom: 0; }
+.method-quote { padding: 10px 12px; border-radius: 9px; background: var(--accent-tint); color: var(--accent-strong) !important; }
+
+.method-details { display: grid; gap: 12px; }
+.method-detail { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.method-detail summary { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; cursor: pointer; list-style: none; }
+.method-detail summary::-webkit-details-marker { display: none; }
+.method-detail summary:hover { background: var(--state-hover); }
+.method-detail__num { flex: none; min-width: 26px; color: var(--accent); font-size: 12px; font-weight: 700; line-height: 1.9; }
+.method-detail__text { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.method-detail__title { font-size: 17px; font-weight: 700; line-height: 1.35; }
+.method-detail__purpose { color: var(--text-muted); font-size: 14px; }
+.method-detail__toggle { position: relative; flex: none; width: 20px; height: 20px; margin-top: 3px; }
+.method-detail__toggle::before { content: ""; position: absolute; width: 8px; height: 8px; left: 4px; top: 3px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg); transition: transform var(--dur-3) var(--ease-standard), top var(--dur-3) var(--ease-standard); }
+.method-detail[open] .method-detail__toggle::before { top: 7px; transform: rotate(225deg); }
+.method-detail__body { display: grid; gap: 14px; padding: 18px 20px 20px 60px; border-top: 1px solid var(--border); }
+.method-detail__body h4 { margin: 0 0 6px; color: var(--text-muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.method-detail__body p { margin: 0; }
+.method-examples { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.method-example { padding: 12px 14px; border-radius: 10px; background: var(--accent-tint); color: #1c4d3d; font-size: 14.5px; }
+.method-example span { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+.method-example--bad { background: #fcebea; color: #77312d; }
+.method-signal { color: #3e4944; font-size: 14px; }
+
+.method-mistakes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.method-mistake { padding: 16px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.method-mistake b { display: block; margin-bottom: 4px; }
+.method-mistake span { color: var(--text-muted); font-size: 14px; }
+
+.method-checklist { margin: 0; padding: 0; list-style: none; }
+.method-checklist li { position: relative; border-bottom: 1px solid var(--border); }
+
+.method-practice { padding: 28px; border-radius: 16px; background: #213b32; color: #fff; }
+.method-practice p { max-width: 590px; color: rgba(255, 255, 255, .75); }
+.method-practice__btn { background: #fff; color: #193d30; }
+.method-practice__btn:hover { background: var(--mint); }
+
+.method-checklist-wrap { display: grid; gap: 12px; }
+.method-checklist__progress { margin: 0; color: var(--text-muted); font-size: 13px; }
+.method-checklist { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.method-checklist li { border-bottom: 1px solid var(--border); }
+.method-checklist label { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; cursor: pointer; }
+.method-checklist input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.method-checklist input:focus-visible { outline: 3px solid rgba(35,107,86,.24); outline-offset: 3px; }
+.method-checklist input:checked + span { color: var(--text-muted); text-decoration: line-through; }
+.method-checklist__reset { width: fit-content; padding: 7px 0; color: var(--accent); font-size: 12px; }
+.method-sources-details { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.method-sources-details summary { padding: 16px 18px; color: var(--accent-strong); font-weight: 700; cursor: pointer; }
+.method-sources-details[open] summary { border-bottom: 1px solid var(--border); }
+.method-sources-details .method-sources { margin: 0; padding: 18px 24px 8px 44px; }
+.method-sources-details .method-footnote { margin: 0; padding: 10px 18px 18px; }
+
+.method-sources { margin: 0 0 14px; padding-left: 20px; color: var(--text-muted); font-size: 14px; }
+.method-sources li { margin-bottom: 6px; }
+.method-footnote { padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
+
+.method-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.method-pager__link { display: grid; gap: 2px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.method-pager__link:hover { border-color: rgba(35, 107, 86, .45); }
+.method-pager__link small { color: var(--text-muted); font-size: 12px; }
+.method-pager__link span { color: var(--accent-strong); font-weight: 600; }
+.method-pager__link--next { text-align: right; }
+
+/* --- Адаптив --- */
+@media (max-width: 900px) {
+  .method-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 24px; }
+  .method-toc { position: static; display: flex; flex-wrap: wrap; gap: 6px; }
+  .method-toc__title { display: none; }
+  .method-toc a { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 13px; }
+}
+@media (max-width: 720px) {
+  .handbook-grid { grid-template-columns: minmax(0, 1fr); }
+  .handbook__toolbar { flex-direction: column; align-items: stretch; }
+  .handbook__select { flex-basis: auto; }
+  .method-hero { padding: 26px 20px; }
+  .method-hero__lead { font-size: 16.5px; }
+  .method-twocol, .method-steps, .method-mistakes, .method-examples { grid-template-columns: minmax(0, 1fr); }
+  .method-detail summary { padding: 16px; gap: 10px; }
+  .method-detail__body { padding: 16px; }
+}
+@media (max-width: 640px) {
+  .handbook-nav { gap: 12px; font-size: 12.5px; }
+}
+@media (max-width: 420px) {
+  .handbook-nav { gap: 10px; font-size: 12px; }
+  .method-hero__foot { flex-direction: column; align-items: stretch; }
+  .method-pager { grid-template-columns: minmax(0, 1fr); }
+  .method-pager__link--next { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .method-card, .method-detail__toggle::before { transition: none; }
+}
+
+/* Кнопка «назад» выравнена по левому краю контента (а не по краю отступа контейнера). */
+.handbook-page .page-head__back { left: 24px; }
+@media (max-width: 640px) { .handbook-page .page-head__back { left: 16px; } }
+@media (max-width: 420px) { .method-rule { flex-direction: column; gap: 4px; } }
+
+/* v21.15: consistent body/caption scale and high-contrast supporting copy. */
+.list-meta,.method-card__meta,.method-toc__title,.method-checklist__progress,.method-checklist__reset,.method-footnote,.method-pager__link small{font-size:14px;line-height:1.45}
+.method-card{border-color:var(--border)}.method-card:hover{border-color:var(--accent)}

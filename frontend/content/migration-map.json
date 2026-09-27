@@ -1,0 +1,44 @@
+{
+  "retired_ui_model": "atomic_cards",
+  "new_ui_model": "method_articles",
+  "visible_methods": [
+    "harvard",
+    "spin",
+    "batna",
+    "active-listening",
+    "anchoring",
+    "hard-tactics",
+    "closing"
+  ],
+  "legacy_cards_policy": "Keep atomic records only in knowledge/chunks for RAG; do not render them in the handbook UI.",
+  "mapping": {
+    "harvard": {
+      "article": "content/methods/harvard.json",
+      "page": "harvard.html"
+    },
+    "spin": {
+      "article": "content/methods/spin.json",
+      "page": "spin.html"
+    },
+    "batna": {
+      "article": "content/methods/batna.json",
+      "page": "batna.html"
+    },
+    "active-listening": {
+      "article": "content/methods/active-listening.json",
+      "page": "active-listening.html"
+    },
+    "anchoring": {
+      "article": "content/methods/anchoring.json",
+      "page": "anchoring.html"
+    },
+    "hard-tactics": {
+      "article": "content/methods/hard-tactics.json",
+      "page": "hard-tactics.html"
+    },
+    "closing": {
+      "article": "content/methods/closing.json",
+      "page": "closing.html"
+    }
+  }
+}

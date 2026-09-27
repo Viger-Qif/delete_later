@@ -1,0 +1,227 @@
+[
+  {
+    "id": "spin-synthetic-001",
+    "exercise_id": "drill-spin-00",
+    "unit_id": "spin-orientation",
+    "answer": "Как сейчас устроен этот процесс и где он требует наибольшего внимания?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-002",
+    "exercise_id": "drill-spin-07",
+    "unit_id": "spin-orientation",
+    "answer": "Как сейчас устроен этот процесс и на каком этапе вам приходится его дополнительно контролировать?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-003",
+    "exercise_id": "drill-spin-08",
+    "unit_id": "situation-questions",
+    "answer": "Как сейчас распределены этапы этого процесса между командами?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-004",
+    "exercise_id": "drill-spin-01",
+    "unit_id": "problem-questions",
+    "answer": "Где текущая схема всё же требует ручного вмешательства?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-005",
+    "exercise_id": "drill-spin-04",
+    "unit_id": "problem-questions",
+    "answer": "На каком этапе текущий процесс всё же приводит к переделке или ожиданию?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-006",
+    "exercise_id": "drill-spin-09",
+    "unit_id": "problem-questions",
+    "answer": "На каком конкретном этапе задержка обычно становится заметной и сколько времени она добавляет?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-007",
+    "exercise_id": "drill-spin-10",
+    "unit_id": "problem-questions",
+    "answer": "Правильно понимаю, что основная нагрузка возникает именно при ручной сверке? Где она отнимает больше всего времени?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-008",
+    "exercise_id": "drill-spin-02",
+    "unit_id": "implication-questions",
+    "answer": "Как эта неопределённость влияет на принятие новой ответственности?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-009",
+    "exercise_id": "drill-spin-05",
+    "unit_id": "implication-questions",
+    "answer": "Как неопределённость влияет на то, какие задачи я готов брать дальше?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-010",
+    "exercise_id": "drill-spin-11",
+    "unit_id": "implication-questions",
+    "answer": "Как отсутствие критериев влияет на то, какие задачи вы готовы брать на себя в следующем квартале?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-011",
+    "exercise_id": "drill-spin-12",
+    "unit_id": "implication-questions",
+    "answer": "Как задержка согласования влияет на срок запуска и планирование команды?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-012",
+    "exercise_id": "drill-spin-03",
+    "unit_id": "need-payoff",
+    "answer": "Что изменится для команды, если срок станет предсказуемым?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-013",
+    "exercise_id": "drill-spin-06",
+    "unit_id": "need-payoff",
+    "answer": "Что изменится для следующего этапа, если мы сделаем срок предсказуемым?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-014",
+    "exercise_id": "drill-spin-13",
+    "unit_id": "need-payoff",
+    "answer": "Что станет проще для команды, если ручная сверка будет занимать значительно меньше времени?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-015",
+    "exercise_id": "drill-spin-14",
+    "unit_id": "need-payoff",
+    "answer": "Какой результат для команды будет самым ценным, если срок согласования станет предсказуемым?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-016",
+    "exercise_id": "drill-spin-15",
+    "unit_id": "spin-transfer",
+    "answer": "Как эти два потерянных дня влияют на срок запуска и работу команды?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-017",
+    "exercise_id": "drill-spin-16",
+    "unit_id": "spin-transfer",
+    "answer": "Что именно сейчас затрудняет согласование пересмотра моей компенсации?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-018",
+    "exercise_id": "drill-spin-17",
+    "unit_id": "spin-transfer",
+    "answer": "На каком этапе рабочий порядок всё же приводит к ожиданию или переделке?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-019",
+    "exercise_id": "drill-spin-18",
+    "unit_id": "spin-transfer",
+    "answer": "Где сейчас чаще всего возникает задержка?\nКак она влияет на срок запуска?",
+    "expected_label": "strong",
+    "expected_reason": "curriculum_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-weak-01",
+    "exercise_id": "drill-spin-00",
+    "unit_id": "spin-orientation",
+    "answer": "Мы покажем вам решение и быстро всё исправим.",
+    "expected_label": "needs_focus",
+    "expected_reason": "curriculum_negative_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-weak-02",
+    "exercise_id": "drill-spin-07",
+    "unit_id": "situation-questions",
+    "answer": "У нас есть сервис, который вам точно подойдёт.",
+    "expected_label": "needs_focus",
+    "expected_reason": "curriculum_negative_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-weak-03",
+    "exercise_id": "drill-spin-01",
+    "unit_id": "problem-questions",
+    "answer": "Наш продукт лучше текущего поставщика.",
+    "expected_label": "needs_focus",
+    "expected_reason": "curriculum_negative_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-weak-04",
+    "exercise_id": "drill-spin-11",
+    "unit_id": "implication-questions",
+    "answer": "Это катастрофа, всё сорвётся.",
+    "expected_label": "needs_focus",
+    "expected_reason": "curriculum_negative_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-weak-05",
+    "exercise_id": "drill-spin-13",
+    "unit_id": "need-payoff",
+    "answer": "Вам нужен наш сервис, потому что он всё ускорит.",
+    "expected_label": "needs_focus",
+    "expected_reason": "curriculum_negative_example",
+    "provisional": true
+  },
+  {
+    "id": "spin-synthetic-weak-06",
+    "exercise_id": "drill-spin-18",
+    "unit_id": "spin-transfer",
+    "answer": "Предлагаю сразу внедрить систему.",
+    "expected_label": "needs_focus",
+    "expected_reason": "curriculum_negative_example",
+    "provisional": true
+  }
+]

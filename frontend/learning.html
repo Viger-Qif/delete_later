@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="/static/assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<title>Учебный режим — Negotiation Lab</title>
+<meta content="Короткие упражнения по методике SPIN." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="/static/css/base.css?v=29" rel="stylesheet"/>
+<link href="/static/css/learning.css?v=29" rel="stylesheet"/>
+<link href="/static/css/secretary.css?v=24" rel="stylesheet"/>
+<link href="/static/css/tour.css?v=5" rel="stylesheet"/>
+</head>
+<body>
+<header class="header">
+<div class="container header__inner">
+<a aria-label="На главную" class="brand" href="index.html">
+<span aria-hidden="true" class="brand__logo">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18">
+<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+</svg>
+</span>
+<span class="brand__name">Negotiation Lab</span>
+</a>
+<nav aria-label="Навигация учебного режима" class="learning-nav">
+<a href="index.html">Главная</a>
+<a href="catalog.html">Сценарии</a>
+<a href="handbook.html">Справочник</a>
+<a href="profile.html">Профиль</a>
+</nav>
+</div>
+</header>
+<main class="learning-page">
+<section class="learning-hero container" data-reveal="">
+
+<div class="learning-hero__eyebrow">Учебный курс · первая методика</div>
+<h1>Методика SPIN: от теории к уверенному разговору</h1>
+<p>Сейчас учебный режим полностью посвящён одной методике — SPIN. Позже появятся другие курсы. Здесь вы сначала поймёте четыре типа вопросов, затем потренируетесь на конкретных примерах, разберёте ошибки и повторите слабые ходы.</p>
+<div class="learning-hero__meta">
+<span><b id="completed-count">0</b> из <b id="total-count">0</b> упражнений</span>
+<span><b id="mastery-value">0%</b> освоения</span>
+</div>
+<div aria-label="Прогресс учебного трека" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="learning-progress" role="progressbar">
+<span id="learning-progress-fill"></span>
+</div>
+<article class="today-card" hidden="" id="today-card">
+<div>
+<span class="today-card__eyebrow">Сегодня</span>
+<h2 id="today-title">Следующий шаг</h2>
+<p id="today-reason"></p>
+</div>
+<button class="btn btn--primary" id="today-open" type="button">Продолжить</button>
+</article>
+<article class="checkpoint-card" hidden="" id="checkpoint-card">
+<div>
+<span class="checkpoint-card__eyebrow">Контрольная точка</span>
+<h2>Проверить SPIN в полноценной симуляции</h2>
+<p>После базовой отработки перенесите навык в переговоры о повышении.</p>
+</div>
+<a class="btn btn--secondary" href="scenario.html?scenario=sc_salary_complete_v3" id="checkpoint-open">Открыть сценарий</a>
+</article>
+</section>
+<section class="learning-guide container" aria-labelledby="roadmap-title">
+<div class="learning-section-head"><span>Начните отсюда</span><h2 id="roadmap-title">Один шаг за раз</h2><p>Система сама предложит ближайшее упражнение. Теория и полный маршрут остаются рядом, но не мешают начать.</p></div>
+<div class="learning-guide__steps" aria-label="Три шага занятия">
+<span><b>1</b> Откройте предложенное упражнение</span>
+<span><b>2</b> Напишите одну реплику</span>
+<span><b>3</b> Посмотрите разбор и продолжите</span>
+</div>
+<details class="learning-disclosure">
+<summary>Как устроен весь курс</summary>
+<div class="roadmap-grid">
+<article><b>1. Теория</b><p>Разобраться, зачем нужны S, P, I и N-вопросы.</p></article>
+<article><b>2. Вводные уроки</b><p>Научиться узнавать каждый тип вопроса.</p></article>
+<article><b>3. Практика</b><p>Сформулировать собственную реплику в конкретной ситуации.</p></article>
+<article><b>4. Разбор</b><p>Увидеть критерии, ошибку и более сильный вариант.</p></article>
+<article><b>5. Повтор</b><p>Вернуться к слабому ходу и применить его в мини-диалоге.</p></article>
+</div>
+</details>
+<details class="learning-disclosure spin-theory">
+<summary>Короткая теория: что такое SPIN</summary>
+<div class="learning-section-head"><span>Короткая теория</span><h2 id="spin-theory-title">Что такое SPIN</h2><p>SPIN помогает не презентовать решение слишком рано, а провести собеседника от фактов к осознанной потребности.</p></div>
+<div class="spin-grid">
+<article><span>S</span><div><b>Situation — ситуация</b><p>Уточните, как всё устроено сейчас. Пример: «Как сейчас согласуются сроки?»</p></div></article>
+<article><span>P</span><div><b>Problem — проблема</b><p>Найдите затруднение. Пример: «На каком этапе чаще возникают задержки?»</p></div></article>
+<article><span>I</span><div><b>Implication — последствия</b><p>Помогите оценить влияние проблемы. Пример: «Как задержка отражается на запуске?»</p></div></article>
+<article><span>N</span><div><b>Need-payoff — ценность решения</b><p>Пусть собеседник сформулирует пользу. Пример: «Что изменится, если согласование станет быстрее?»</p></div></article>
+</div>
+</details>
+</section>
+<section class="learning-layout container">
+<aside aria-label="Уроки" class="learning-sidebar">
+<div class="panel-heading">
+<span class="panel-heading__eyebrow">Траектория</span>
+<h2>Траектория SPIN</h2>
+</div>
+<p class="sidebar-copy">Это последовательный курс. Начните с ориентации, затем переходите к S, P, I и N, а в конце соедините вопросы в коротком разговоре.</p>
+<div class="level-list" id="level-list">
+<div class="level-item is-active">
+<span class="level-item__number">1</span>
+<span><b>Основа</b><small>Распознать и выбрать</small></span>
+</div>
+<div class="level-item is-next">
+<span class="level-item__number">2</span>
+<span><b>Применение</b><small>Сформулировать самому</small></span>
+</div>
+<div class="level-item is-next">
+<span class="level-item__number">3</span>
+<span><b>Перенос</b><small>Применить в симуляции</small></span>
+</div>
+</div>
+<div class="learning-note">
+<b>Как это работает</b>
+<p>После ответа система показывает критерии, сохраняет попытку и планирует прозрачное повторение слабых ходов.</p>
+</div>
+</aside>
+<section aria-live="polite" class="learning-main">
+<div class="learning-section-head practice-heading"><span>Практика</span><h2>Ваш текущий этап</h2><p>Сначала показан только ближайший блок. Полный список можно раскрыть, когда он понадобится.</p></div>
+<div class="state-card" id="learning-state">
+<div aria-hidden="true" class="state-card__spinner"></div>
+<p>Загружаю упражнения…</p>
+</div>
+<div class="exercise-list" hidden="" id="exercise-list"></div>
+<button class="btn btn--secondary learning-show-all" hidden id="show-all-exercises" type="button">Показать все этапы</button>
+<article class="dialogue-launch" hidden="" id="dialogue-launch">
+<div>
+<span class="dialogue-launch__eyebrow">Следующий шаг</span>
+<h2>Мини-диалог: разговор о повышении</h2>
+<p>Примените три типа вопросов подряд в короткой ситуации с руководителем.</p>
+</div>
+<button class="btn btn--primary" id="start-dialogue" type="button">Начать мини-диалог</button>
+</article>
+<article class="exercise-runner" hidden="" id="exercise-runner">
+<button class="runner-back" id="runner-back" type="button">← К списку упражнений</button>
+<div class="runner-label" id="runner-label"></div>
+<h2 id="runner-title"></h2>
+<div class="runner-origin" id="runner-origin" hidden></div>
+<div class="prompt-card">
+<span class="prompt-card__label">Контекст</span>
+<p id="runner-context"></p>
+<div class="task-divider"></div>
+<span class="prompt-card__label">Ваша задача</span>
+<p id="runner-instruction"></p>
+<div class="success-signal" id="runner-success"></div>
+<div class="common-trap" id="runner-trap"></div>
+</div>
+<p class="runner-why" id="runner-why"></p>
+<label class="answer-label" for="answer-input">Ваш ход</label>
+<textarea id="answer-input" maxlength="2000" placeholder="Напишите одну реплику собеседнику…" rows="4"></textarea>
+<div class="runner-actions">
+<button class="btn btn--primary" id="submit-answer" type="button">Проверить ответ</button>
+<span class="runner-hint" id="runner-hint">Одна короткая реплика — достаточно.</span>
+</div>
+<div class="attempt-result" hidden="" id="attempt-result"></div>
+<p class="assessment-note">Автоматическая проверка — это подсказка для тренировки, а не окончательный вердикт о качестве вашей переговорной реплики.</p>
+<button class="btn btn--secondary coach-answer-button" hidden="" id="coach-answer" type="button">Разобрать ответ с ИИ</button>
+<div class="coach-result" hidden="" id="coach-result"></div>
+<button class="btn btn--secondary next-button" hidden="" id="next-exercise" type="button">Следующее упражнение →</button>
+</article>
+<article class="exercise-runner dialogue-runner" hidden="" id="dialogue-runner">
+<button class="runner-back" id="dialogue-back" type="button">← К упражнениям</button>
+<div class="runner-label">Перенос · мини-диалог</div>
+<div class="dialogue-step" id="dialogue-step">Ход 1 из 3</div>
+<div class="opponent-bubble">
+<span class="prompt-card__label">Реплика собеседника</span>
+<p id="dialogue-opponent"></p>
+</div>
+<h2 id="dialogue-prompt"></h2>
+<label class="answer-label" for="dialogue-input">Ваш ход</label>
+<textarea id="dialogue-input" maxlength="2000" placeholder="Напишите одну реплику…" rows="4"></textarea>
+<div class="runner-actions">
+<button class="btn btn--primary" id="submit-dialogue" type="button">Проверить ход</button>
+<span class="runner-hint" id="dialogue-hint">Отвечайте одной репликой.</span>
+</div>
+<div class="attempt-result" hidden="" id="dialogue-result"></div>
+<button class="btn btn--secondary next-button" hidden="" id="next-dialogue" type="button">Следующий ход →</button>
+<form class="reflection-form" hidden="" id="reflection-form">
+<span class="reflection-form__eyebrow">Короткая рефлексия</span>
+<h3>Что заберёте в следующий разговор?</h3>
+<label for="reflection-tried">Что вы пробовали сделать?</label>
+<textarea id="reflection-tried" maxlength="1200" rows="2"></textarea>
+<label for="reflection-noticed">Что изменилось после ответа собеседника?</label>
+<textarea id="reflection-noticed" maxlength="1200" rows="2"></textarea>
+<label for="reflection-next">Что попробуете в следующий раз?</label>
+<textarea id="reflection-next" maxlength="1200" rows="2"></textarea>
+<button class="btn btn--primary" type="submit">Сохранить рефлексию</button>
+<span class="runner-hint" id="reflection-status"></span>
+</form>
+</article>
+</section>
+</section>
+</main>
+<aside aria-live="polite" class="secretary-widget secretary-widget--learning" data-secretary-root="">
+<div class="secretary-bubble" data-secretary-bubble="" hidden="">
+<b>Фиделина</b><p data-secretary-text="">Это курс по одной методике — SPIN. Я покажу путь от теории до повторения и помогу разобраться в каждом экране.</p>
+<div class="secretary-intro-actions"><button class="btn btn--primary" id="learning-tour-restart" type="button">Показать учебный путь</button></div>
+<div class="secretary-bubble__actions"><button data-secretary-close="" type="button">Закрыть подсказку</button><button data-secretary-hide="" type="button">Убрать Фиделину</button></div>
+</div>
+<button aria-label="Открыть объяснение Фиделины" class="secretary-character" data-secretary-toggle="" type="button"><img alt="Фиделина объясняет учебный режим" data-secretary-image="" height="479" src="/static/assets/secretary/idle.webp" width="240"/></button>
+</aside>
+<script src="/static/js/data.js?v=29"></script>
+<script src="/static/js/app.js?v=27"></script>
+<script src="/static/js/secretary.js?v=24"></script>
+<script src="/static/js/tour.js?v=6"></script>
+<script src="/static/js/page-tours.js?v=4"></script>
+<script src="/static/js/learning.js?v=31"></script>
+</body>
+</html>

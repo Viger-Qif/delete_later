@@ -1,0 +1,80 @@
+[
+  {
+    "id": "gold-spin-salary-01",
+    "scenario_id": "sc_salary_complete_v3",
+    "user_turns": [
+      "Я хочу повышение на 15% уже в этом месяце.",
+      "За последний квартал я закрыл три проекта раньше срока."
+    ],
+    "expected_evidence": [
+      {
+        "turn_index": 1,
+        "quote": "Я хочу повышение на 15% уже в этом месяце.",
+        "event": "ранняя презентация решения",
+        "skill_id": "spin.problem",
+        "severity": "high"
+      }
+    ]
+  },
+  {
+    "id": "gold-spin-salary-02",
+    "scenario_id": "sc_salary_complete_v3",
+    "user_turns": [
+      "Как сейчас принимаются решения о пересмотре роли?",
+      "Как отсутствие критериев влияет на готовность брать новую ответственность?"
+    ],
+    "expected_evidence": [
+      {
+        "turn_index": 2,
+        "quote": "Как отсутствие критериев влияет на готовность брать новую ответственность?",
+        "event": "извлекающий вопрос",
+        "skill_id": "spin.implication",
+        "severity": "low"
+      }
+    ]
+  },
+  {
+    "id": "gold-spin-procurement-01",
+    "scenario_id": "procurement_spin_v1",
+    "user_turns": [
+      "А вы знаете, что наш сервис дешевле?",
+      "Где текущая схема всё же требует ручного вмешательства?"
+    ],
+    "expected_evidence": [
+      {
+        "turn_index": 1,
+        "quote": "А вы знаете, что наш сервис дешевле?",
+        "event": "преждевременная презентация решения",
+        "skill_id": "spin.problem",
+        "severity": "medium"
+      }
+    ]
+  },
+  {
+    "id": "gold-spin-conflict-01",
+    "scenario_id": "team_conflict_v1",
+    "user_turns": [
+      "Как задержка влияет на следующий этап и общую метрику?",
+      "Что изменится для команды, если срок станет предсказуемым?"
+    ],
+    "expected_evidence": [],
+    "note": "Корректное применение SPIN не должно превращаться в ошибку только ради наличия ошибки."
+  },
+  {
+    "id": "gold-spin-salary-03",
+    "scenario_id": "sc_salary_complete_v3",
+    "user_turns": [
+      "Разве отсутствие повышения не разрушает мою карьеру?",
+      "Что изменится для нас, если мы заранее согласуем критерии и дату пересмотра?"
+    ],
+    "expected_evidence": [
+      {
+        "turn_index": 1,
+        "quote": "Разве отсутствие повышения не разрушает мою карьеру?",
+        "event": "драматизация последствия",
+        "skill_id": "spin.implication",
+        "severity": "medium"
+      }
+    ]
+  }
+]

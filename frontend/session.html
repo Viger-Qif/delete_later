@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="/static/assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<title>Тренировка — диалог</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="/static/css/base.css?v=29" rel="stylesheet"/>
+<link href="/static/css/session.css?v=24" rel="stylesheet"/>
+<link href="/static/css/tour.css?v=5" rel="stylesheet"/>
+<link href="/static/css/secretary.css?v=24" rel="stylesheet"/>
+</head>
+<body class="session-page">
+<div class="session">
+<div class="session-bar">
+<!-- обёртка обязательна: на ней держится сетка бара -->
+<div class="container session-bar__inner">
+
+<div aria-label="Прогресс сессии" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress" id="progress-bar" role="progressbar">
+<div class="progress__track">
+<div class="progress__fill" id="progress-fill"></div>
+</div>
+<span class="progress__label" id="progress-label"></span>
+</div>
+<div class="session-tools">
+<button class="btn btn--secondary session-exit-button" id="exit-btn" type="button">Завершить / выйти</button>
+<div class="model-chip" hidden="" id="session-model">
+<button aria-describedby="session-model-popover" class="icon-btn model-chip__button" id="session-model-btn" title="Модели и движок" type="button">
+<svg fill="none" height="17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="17"><rect height="16" rx="4" width="16" x="4" y="4"></rect><path d="M9 9h6v6H9z"></path><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"></path></svg>
+<span class="runtime-status model-chip__label" id="runtime-status">Движок…</span>
+</button>
+<div class="model-chip__popover" id="session-model-popover" role="tooltip">
+<b>Доступные модели</b>
+<ul class="model-chip__list" id="session-model-list"><li>Загружаем статус…</li></ul>
+<small id="session-model-note">Доступность проверяется один раз при запуске сервера.</small>
+</div>
+</div>
+<button aria-pressed="false" class="icon-btn tool-btn" data-panel="topics" title="Справочник по диалогу" type="button">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="18">
+<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+</svg>
+</button>
+<button aria-pressed="false" class="icon-btn tool-btn" data-panel="stats" title="Лог и баллы" type="button">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="18">
+<polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+<polyline points="2 17 12 22 22 17"></polyline>
+<polyline points="2 12 12 17 22 12"></polyline>
+</svg>
+</button>
+<button aria-label="Открыть Фиделину" aria-pressed="false" class="icon-btn tool-btn coach-trigger" data-panel="hints" id="hints-btn" title="Открыть Фиделину и поставить диалог на паузу" type="button">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="18">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="12" x2="12" y1="7" y2="13"></line>
+<line x1="12" x2="12.01" y1="17" y2="17"></line>
+</svg>
+</button>
+<button aria-pressed="false" class="icon-btn tool-btn" data-panel="info" title="Справочная информация" type="button">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="18">
+<path d="M12 2a7 7 0 0 0-4.1 12.7c.7.5 1.1 1.4 1.1 2.3h6c0-.9.4-1.8 1.1-2.3A7 7 0 0 0 12 2z"></path>
+<line x1="9.5" x2="14.5" y1="20" y2="20"></line>
+<line x1="10.5" x2="13.5" y1="23" y2="23"></line>
+</svg>
+</button>
+<button aria-label="Показать обучение" class="icon-btn tool-btn" id="tutorial-btn" title="Показать обучение" type="button">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="18"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 1 1 4.8 2.4c-1.2.8-1.9 1.3-1.9 2.6"></path><line x1="12" x2="12.01" y1="18" y2="18"></line></svg>
+</button>
+</div>
+</div>
+</div>
+<div class="session-body">
+<!-- Левая колонка панелей: плавает слева от чата -->
+<aside class="side side--left">
+<section class="panel" hidden="" id="panel-topics">
+<div class="panel__head">
+<h2 class="panel__title">Справочник</h2>
+<button aria-label="Закрыть панель" class="panel__x" data-close="topics" type="button">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewbox="0 0 24 24" width="14"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</div>
+<div class="panel__body" id="topics-body"></div>
+</section>
+<section class="panel" hidden="" id="panel-stats">
+<div class="panel__head">
+<h2 class="panel__title">Лог и баллы</h2>
+<button aria-label="Закрыть панель" class="panel__x" data-close="stats" type="button">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewbox="0 0 24 24" width="14"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</div>
+<div class="panel__body" id="stats-body"></div>
+</section>
+</aside>
+<!-- Чат: ширина постоянная, панели его не трогают -->
+<section class="chat">
+<div class="chat-title-row"><h1 class="chat__title" id="chat-title">Сценарий</h1></div>
+<div aria-live="polite" class="processing-banner" hidden="" id="processing-banner" role="status">
+<span aria-hidden="true" class="processing-banner__spinner"></span>
+<span><b id="processing-title">Обрабатываем реплику…</b><small id="processing-text">Собеседник анализирует аргументы.</small></span>
+</div>
+<div aria-live="polite" class="chat__log" id="chat-log"></div>
+<p class="chat__timer" hidden="" id="chat-timer">Напоминание через 0:15 · время не ограничено</p>
+<form class="chat__form" id="chat-form">
+<textarea autocomplete="off" class="chat__input" id="chat-input" maxlength="2000" placeholder="Ваша реплика…  Enter — отправить, Shift+Enter — новая строка" rows="3"></textarea>
+<span class="chat__counter" id="chat-counter">0 / 2000</span>
+<button aria-label="Ввести сообщение голосом" class="chat__voice" id="voice-input-btn" title="Ввести сообщение голосом" type="button">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" viewbox="0 0 24 24" width="18"><rect height="12" rx="3" width="6" x="9" y="2"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path></svg>
+</button>
+<button aria-label="Отправить" class="chat__send" type="submit">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18">
+<line x1="22" x2="11" y1="2" y2="13"></line>
+<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+</svg>
+</button>
+</form>
+</section>
+<!-- Правая колонка панелей: плавает справа от чата -->
+<aside class="side side--right">
+<section class="panel" hidden="" id="panel-hints">
+<div class="panel__head">
+<h2 class="panel__title">Советы и ошибки</h2>
+<button aria-label="Закрыть панель" class="panel__x" data-close="hints" type="button">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewbox="0 0 24 24" width="14"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</div>
+<div class="panel__body" id="hints-body"></div>
+</section>
+<section class="panel" hidden="" id="panel-info">
+<div class="panel__head">
+<h2 class="panel__title">Справочная информация</h2>
+<button aria-label="Закрыть панель" class="panel__x" data-close="info" type="button">
+<svg fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewbox="0 0 24 24" width="14"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg>
+</button>
+</div>
+<div class="panel__body" id="info-body"></div>
+</section>
+</aside>
+</div>
+</div>
+<aside aria-live="polite" class="secretary-widget secretary-widget--session" data-secretary-root="">
+<div class="secretary-bubble" data-secretary-bubble="" hidden="">
+<b>Фиделина</b><p data-secretary-text="">Могу подсказать следующий переговорный шаг.</p>
+<div class="secretary-bubble__actions"><button data-secretary-close="" type="button">Закрыть подсказку</button><button data-secretary-hide="" type="button">Убрать Фиделину</button></div>
+</div>
+<button aria-label="Открыть советы Фиделины" class="secretary-character" data-secretary-toggle="" type="button"><img alt="Фиделина готова помочь" data-secretary-image="" height="479" src="/static/assets/secretary/idle.webp" width="240"/></button>
+</aside>
+<div aria-hidden="true" class="coach-modal" hidden="" id="coach-modal">
+<div class="coach-modal__backdrop" data-coach-close=""></div>
+<section aria-labelledby="coach-modal-title" aria-modal="true" class="coach-modal__dialog" role="dialog">
+<button aria-label="Закрыть Фиделину" class="coach-modal__close" id="coach-modal-close" type="button">×</button>
+<div class="coach-modal__visual">
+<img alt="Фиделина готовит совет" data-secretary-image="" height="479" src="/static/assets/secretary/thinking.webp" width="240"/>
+</div>
+<div class="coach-modal__content">
+<p class="page-eyebrow">Фиделина · переговорный коуч</p>
+<h2 id="coach-modal-title">Диалог поставлен на паузу</h2>
+<div aria-live="polite" class="coach-modal__body" id="coach-modal-body">Фиделина готовит короткий совет…</div>
+<div class="coach-modal__history" hidden="" id="coach-modal-history"></div>
+<p class="coach-modal__pause">Пока окно открыто, диалог и напоминания стоят на паузе.</p>
+<button class="btn btn--secondary" id="coach-modal-refresh" type="button">Получить ещё совет</button>
+</div>
+</section>
+</div>
+<script src="/static/js/data.js?v=24"></script>
+<script src="/static/js/app.js?v=27"></script>
+<script src="/static/js/secretary.js?v=24"></script>
+<script src="/static/js/tour.js?v=6"></script>
+<script src="/static/js/session.js?v=23"></script>
+</body>
+</html>

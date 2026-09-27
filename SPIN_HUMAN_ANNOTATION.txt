@@ -1,0 +1,287 @@
+NEGOTIATION LAB — SPIN HUMAN ANNOTATION PACK
+Version: 1.0
+Purpose: calibrate the SPIN learning checker and LLM-RAG coach on real human answers.
+Active methodology: SPIN only.
+
+============================================================
+1. HOW TO USE THIS FILE
+============================================================
+
+One BLOCK = one human answer to one exercise.
+
+Before annotating:
+1. Read the context and instruction.
+2. Read the learner answer once without comparing it to the example.
+3. Decide what the learner was trying to do.
+4. Mark the observable criteria.
+5. Choose one overall label.
+6. Write short feedback that would help the learner try again.
+
+Do not grade grammar, spelling, personal style, or exact similarity to the example.
+Accept natural paraphrases when they perform the same negotiation move.
+Do not reward a beautiful sentence that does not answer the task.
+Do not punish a short sentence if it performs the correct move.
+
+Use only the information in the exercise context. Do not infer facts about the learner.
+Remove names, company names, emails, salaries, phone numbers, and other personal data.
+
+============================================================
+2. OVERALL LABELS
+============================================================
+
+strong
+  The answer performs the requested move and is usable without a major change.
+  Minor wording improvements are allowed.
+
+usable
+  The answer is directionally correct and could work, but one important element
+  is weak, vague, premature, too broad, or poorly connected to the context.
+  The learner should normally be allowed to continue after one focused hint.
+
+needs_focus
+  The answer does not yet perform the requested move, jumps to a solution,
+  misses the target SPIN stage, or is too vague to use.
+
+off_task
+  The answer is unrelated to the negotiation task or answers a different question.
+
+unsafe_or_boundary
+  The answer contains an ultimatum, threat, harassment, fabricated offer,
+  personal attack, or another boundary violation. Do not praise it as a strong move.
+
+If you are between two labels, choose the more generous label and lower confidence.
+The goal is to improve learning, not to win an argument with the learner.
+
+============================================================
+3. CRITERION VALUES
+============================================================
+
+pass
+  Clearly present in the answer.
+
+partial
+  Present, but weak, vague, too broad, or not fully connected to context.
+
+fail
+  Missing or contradicted by the answer.
+
+not_applicable
+  The criterion does not belong to this exercise. Use only when the exercise
+  explicitly makes the criterion optional.
+
+Common SPIN criteria:
+- open_question: asks an open question or a natural multi-part question;
+- situation: explores how the current process/context works;
+- problem: explores a concrete difficulty, friction, delay, risk, or limitation;
+- listening: reflects or accurately checks what the other person just said;
+- implication: connects a recognized problem to a consequence for work, time,
+  team, risk, cost, responsibility, or result;
+- need_payoff: lets the other person formulate the benefit of change;
+- linked_to_context: question is connected to the specific fact in the prompt;
+- specific: asks for a concrete example, stage, number, date, criterion, or result;
+- no_pitch: does not prematurely advertise a product or jump to a solution;
+- calibrated: avoids threats, absolutes, drama, blame, and exaggeration;
+- sequence: follows the requested SPIN order.
+
+============================================================
+4. REQUIRED FIELDS FOR EACH ANNOTATION BLOCK
+============================================================
+
+case_id: unique id, for example spin-human-0001
+exercise_id: exact id from learning.json
+unit_id: exact unit id from learning.json
+annotator_id: anonymous code, for example annotator-a
+context: copy from the exercise or use the supplied scenario context
+instruction: copy the learner-facing instruction
+learner_answer: exact answer, with personal data removed
+intent: what the learner appears to be trying to do
+overall_label: strong | usable | needs_focus | off_task | unsafe_or_boundary
+criteria:
+  open_question: pass | partial | fail | not_applicable
+  situation: pass | partial | fail | not_applicable
+  problem: pass | partial | fail | not_applicable
+  listening: pass | partial | fail | not_applicable
+  implication: pass | partial | fail | not_applicable
+  need_payoff: pass | partial | fail | not_applicable
+  linked_to_context: pass | partial | fail | not_applicable
+  specific: pass | partial | fail | not_applicable
+  no_pitch: pass | partial | fail | not_applicable
+  calibrated: pass | partial | fail | not_applicable
+  sequence: pass | partial | fail | not_applicable
+  # Keep only the criteria that are present in the exercise rubric.
+feedback: one or two sentences addressed to the learner
+next_hint: one concrete thing to try on the next attempt
+acceptable_alternative: yes | no
+acceptable_alternative_reason: why this answer is or is not a valid paraphrase
+ideal_reply: one possible improved reply; do not imply it is the only correct wording
+annotator_confidence: 1 | 2 | 3 | 4 | 5
+needs_adjudication: yes | no
+adjudication_note: leave empty unless annotators disagree
+
+============================================================
+5. COPY-PASTE TEMPLATE
+============================================================
+
+--- ANNOTATION START ---
+case_id: spin-human-0000
+exercise_id: drill-spin-00
+unit_id: spin-orientation
+annotator_id: annotator-a
+context:
+instruction:
+learner_answer:
+intent:
+overall_label:
+criteria:
+  open_question:
+  situation:
+  problem:
+  listening:
+  implication:
+  need_payoff:
+  linked_to_context:
+  specific:
+  no_pitch:
+  calibrated:
+  sequence:
+feedback:
+next_hint:
+acceptable_alternative:
+acceptable_alternative_reason:
+ideal_reply:
+annotator_confidence:
+needs_adjudication: no
+adjudication_note:
+--- ANNOTATION END ---
+
+============================================================
+6. WORKED EXAMPLES
+============================================================
+
+EXAMPLE A — strong
+
+--- ANNOTATION START ---
+case_id: spin-example-0001
+exercise_id: drill-spin-00
+unit_id: spin-orientation
+annotator_id: example
+context: Вы ещё ничего не знаете о текущем процессе собеседника.
+instruction: Задайте один открытый вопрос о его текущем процессе или контексте.
+learner_answer: Как сейчас устроен этот процесс и где он требует наибольшего внимания?
+intent: Понять текущий процесс и найти место для дальнейшего исследования.
+overall_label: strong
+criteria:
+  open_question: pass
+  situation: pass
+  no_pitch: pass
+feedback: Вы начали с исследования ситуации и не стали преждевременно презентовать решение.
+next_hint: После ответа собеседника выберите только одну названную трудность для следующего вопроса.
+acceptable_alternative: yes
+acceptable_alternative_reason: Формулировка отличается от примера, но выполняет тот же ход S и остаётся открытой.
+ideal_reply: Как сейчас устроен этот процесс и где он требует наибольшего внимания?
+annotator_confidence: 5
+needs_adjudication: no
+adjudication_note:
+--- ANNOTATION END ---
+
+EXAMPLE B — usable
+
+--- ANNOTATION START ---
+case_id: spin-example-0002
+exercise_id: drill-spin-01
+unit_id: problem-questions
+annotator_id: example
+context: Закупщик говорит, что текущий поставщик его устраивает.
+instruction: Спросите, где в текущем процессе всё же возникает неудобство или лишняя работа.
+learner_answer: А мы можем предложить более удобный сервис, который всё упростит?
+intent: Перейти к своему решению, вероятно пытаясь показать пользу.
+overall_label: usable
+criteria:
+  open_question: pass
+  problem: fail
+  no_pitch: fail
+  linked_to_context: partial
+feedback: Вы задали вопрос, но сразу перешли к своему решению. Сначала выясните, где текущий процесс создаёт неудобство.
+next_hint: Уберите «мы можем предложить» и спросите о конкретном этапе, задержке или ручной работе.
+acceptable_alternative: no
+acceptable_alternative_reason: Это вопрос, но он не исследует проблему собеседника и рекламирует решение.
+ideal_reply: Где текущая схема всё же требует ручного вмешательства?
+annotator_confidence: 5
+needs_adjudication: no
+adjudication_note:
+--- ANNOTATION END ---
+
+EXAMPLE C — needs_focus
+
+--- ANNOTATION START ---
+case_id: spin-example-0003
+exercise_id: drill-spin-03
+unit_id: need-payoff
+annotator_id: example
+context: Собеседник признал, что сроки иногда задерживаются.
+instruction: Спросите, что изменится для него или команды, если сроки станут предсказуемыми.
+learner_answer: Нам нужно срочно внедрить систему, иначе всё будет плохо.
+intent: Убедить собеседника принять решение через давление.
+overall_label: needs_focus
+criteria:
+  open_question: fail
+  need_payoff: fail
+  linked_to_context: partial
+  no_pitch: fail
+  calibrated: fail
+feedback: В реплике нет вопроса, а решение и срочность уже объявлены за собеседника. Сначала спросите, какую пользу он сам видит в предсказуемом сроке.
+next_hint: Начните с «Что изменится для команды, если…» и не называйте свой продукт.
+acceptable_alternative: no
+acceptable_alternative_reason: Это утверждение с решением и давлением, а не направляющий вопрос о ценности.
+ideal_reply: Что изменится для команды, если срок станет предсказуемым?
+annotator_confidence: 5
+needs_adjudication: no
+adjudication_note:
+--- ANNOTATION END ---
+
+============================================================
+7. RECOMMENDED CALIBRATION PROCESS
+============================================================
+
+Pilot batch:
+- 5 answers per unit;
+- 6 units;
+- 30 answers total;
+- two annotators label the same pilot batch;
+- discuss every disagreement before scaling.
+
+Full calibration batch:
+- 20–30 answers per unit;
+- 120–180 answers total;
+- at least 20% double-labelled by a second person;
+- store disagreements instead of silently deleting them.
+
+After annotation, calculate:
+- agreement on overall_label;
+- agreement on each core criterion;
+- false-negative rate for natural paraphrases;
+- percentage of `usable` answers that become `strong` after one hint;
+- whether the next recommended exercise matches the human-labelled weak skill.
+
+Do not optimize only for agreement with the current expert checker. If humans agree
+that the checker is too strict, update the checker and keep the human labels as the
+calibration reference.
+
+============================================================
+8. HOW HARD IS MANUAL LABELING?
+============================================================
+
+A first pilot is easy if the annotator understands basic SPIN:
+- 10–15 minutes to read this guide and calibrate on the examples;
+- about 3–5 minutes per answer during the first batch;
+- 30-answer pilot: roughly 2–3 hours for one annotator;
+- double-labelled pilot: roughly 4–6 total person-hours.
+
+A full 120–180-answer calibration is moderate, not research-lab-hard:
+- roughly 6–15 hours for one experienced annotator;
+- roughly 12–30 person-hours when 20% or more is double-labelled;
+- most time is spent discussing ambiguous answers, not filling fields.
+
+A negotiator, sales trainer, manager, or researcher can do the first pass.
+A senior negotiation expert should review the disagreements and the examples used
+as gold cases. We do not need a PhD-level annotation team for the first SPIN pilot.

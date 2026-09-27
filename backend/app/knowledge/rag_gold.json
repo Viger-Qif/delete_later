@@ -1,0 +1,58 @@
+[
+  {
+    "id": "spin-query-problem-01",
+    "query": "Закупщик говорит, что текущий поставщик устраивает. Задайте проблемный вопрос.",
+    "expected_ids": ["spin-problem-questions"],
+    "method_id": "spin",
+    "stage": "discovery"
+  },
+  {
+    "id": "spin-query-implication-01",
+    "query": "Сотрудник говорит о неясных критериях роста. Задайте извлекающий вопрос.",
+    "expected_ids": ["spin-implication-questions"],
+    "method_id": "spin",
+    "stage": "discovery"
+  },
+  {
+    "id": "spin-query-need-payoff-01",
+    "query": "После признанной задержки задайте направляющий вопрос.",
+    "expected_ids": ["spin-need-payoff-questions"],
+    "method_id": "spin",
+    "stage": "objection"
+  },
+  {
+    "id": "spin-query-situation-01",
+    "query": "Уточните текущую роль, критерии и процесс принятия решения о повышении.",
+    "expected_ids": ["spin-situation-questions", "spin-situation-salary"],
+    "method_id": "spin",
+    "stage": "discovery"
+  },
+  {
+    "id": "spin-query-sequence-01",
+    "query": "Как выстроить последовательность от текущей ситуации к проблеме, последствиям и ценности?",
+    "expected_ids": ["spin-question-sequence", "spin-sequence-full"],
+    "method_id": "spin",
+    "stage": "discovery"
+  },
+  {
+    "id": "spin-query-listening-01",
+    "query": "Что делать между вопросами SPIN, чтобы не превращать разговор в допрос?",
+    "expected_ids": ["spin-listening-between-questions"],
+    "method_id": "spin",
+    "stage": "discovery"
+  },
+  {
+    "id": "spin-query-early-payoff-01",
+    "query": "Пользователь сразу предлагает решение до признания проблемы.",
+    "expected_ids": ["spin-early-need-payoff"],
+    "method_id": "spin",
+    "stage": "objection"
+  },
+  {
+    "id": "spin-query-not-use-01",
+    "query": "Когда SPIN не подходит и не нужно задавать длинную цепочку вопросов?",
+    "expected_ids": ["spin-when-not-to-use"],
+    "method_id": "spin",
+    "stage": "discovery"
+  }
+]

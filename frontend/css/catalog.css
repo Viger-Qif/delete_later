@@ -1,0 +1,231 @@
+/* ============================================================
+   Страница 2: каталог сценариев (catalog.html).
+   ============================================================ */
+
+.handbook-nav { margin-left: auto; display: flex; gap: 16px; font-size: 13px; }
+.handbook-nav a { color: var(--text-muted); text-decoration: none; }
+.handbook-nav a:hover { color: var(--accent); }
+
+.catalog {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  padding-top: 28px;
+  padding-bottom: 96px; /* место под выезжающую панель */
+}
+
+/* --- Фильтры --- */
+.filters {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.filters__title {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.filters__group { margin-bottom: 16px; }
+
+.filters__group-title {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.filters__reset { width: 100%; }
+
+/* --- Правая колонка --- */
+.catalog__main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.list-meta {
+  margin: 2px 0 0 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Панель списка со своим скроллом, как в макете */
+.scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  max-height: min(620px, calc(100vh - 260px));
+  min-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #C6D0DA transparent;
+}
+
+.scenario-list::-webkit-scrollbar { width: 8px; }
+.scenario-list::-webkit-scrollbar-thumb { background: #C6D0DA; border-radius: 8px; }
+.scenario-list::-webkit-scrollbar-track { background: transparent; }
+
+/* --- Карточка сценария --- */
+.scenario {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--dur-2) var(--ease-standard), box-shadow var(--dur-2) var(--ease-standard);
+}
+
+.scenario:hover {
+  border-color: rgba(35, 107, 86, .35);
+  box-shadow: var(--shadow-sm);
+}
+
+.scenario.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.scenario__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-tint);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+
+.scenario__body { min-width: 0; }
+
+.scenario__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.scenario__title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+}
+
+.scenario__desc {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.scenario__meta {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--neutral-mute);
+}
+
+.scenario__btn { min-width: 108px; }
+
+/* --- Пустой результат --- */
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.empty__title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty .btn { margin-top: 14px; }
+
+.select-bar.is-visible { transform: translate(-50%, 0); }
+
+.select-bar__icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(39, 174, 96, .22);
+  color: #6FCF97;
+  display: grid;
+  place-items: center;
+}
+
+.select-bar__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.select-bar__close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, .6);
+  display: grid;
+  place-items: center;
+  transition: background var(--dur-2) var(--ease-standard), color var(--dur-2) var(--ease-standard);
+}
+
+.select-bar__close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+}
+
+/* --- Мобильная раскладка --- */
+@media (max-width: 860px) {
+  .catalog { grid-template-columns: 1fr; }
+  .filters { position: static; }
+}
+
+@media (max-width: 560px) {
+  .scenario { grid-template-columns: auto minmax(0, 1fr); }
+  .scenario__btn { grid-column: 2; justify-self: start; }
+}
+/* v21.15: readable supporting text and stronger selected surfaces. */
+.filters__title,.filters__group-title,.list-meta,.scenario__desc,.scenario__meta{font-size:14px;line-height:1.5}
+.scenario{border-color:var(--border);background:var(--surface)}
+.scenario:hover{border-color:var(--accent);background:#F7FAF8}
+.scenario.is-selected{background:#E2EFE8;box-shadow:inset 0 0 0 1px var(--accent)}
