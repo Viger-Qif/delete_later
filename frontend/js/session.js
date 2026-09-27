@@ -13,6 +13,22 @@
   const DIFFICULTY = CONFIG.difficultyMode || 'medium';
   const ENGINE_MODE=CONFIG.engineMode||'auto';
 
+  /* --- Интеграция режима «Два стула»: план пары определяет поведение --- */
+  function twoChairsPlan() {
+    const plan = NTData.getTwoChairsPlan();
+    if (!plan || plan.completed) return null;
+    // План относится к текущему запуску, только если сценарий совпадает
+    // с раундом плана и раунд ещё не сыгран.
+    const matches = plan.round === 2
+      ? (plan.invertedId && plan.invertedId === scenarioId)
+      : (plan.scenarioId && plan.scenarioId === scenarioId);
+    if (!matches) return null;
+    if (plan.round === 1 && plan.round1Done) return null;
+    if (plan.round === 2 && plan.round2Done) return null;
+    return plan;
+  }
+  const TC_PLAN = twoChairsPlan();
+
   const progressFill = document.getElementById('progress-fill');
   const progressBar  = document.getElementById('progress-bar');
   const progressLabel = document.getElementById('progress-label');
@@ -385,7 +401,7 @@
   async function finishRedirect() {
     if (done) return;
     done = true;
-    NTData.saveCompletedSession(session, scenario);
+    NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
     stopTimer();
     chatInput.disabled = true;
     voiceInputBtn.disabled = true;
@@ -397,10 +413,24 @@
     if (session.status !== 'abandoned') {
       try {
         session.analysis = await NTData.analyzeResult(session.id);
-        NTData.saveCompletedSession(session, scenario);
+        NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
       } catch (error) {
         console.warn('Не удалось сформировать разбор:', error);
       }
+    }
+    /* Режим «Два стула»: раунд 1 -> экран паузы, раунд 2 -> сравнительный анализ. */
+    if (TC_PLAN) {
+      const plan = NTData.getTwoChairsPlan();
+      if (plan && plan.pairId) {
+        plan['round' + TC_PLAN.round + 'Done'] = true;
+        plan.lastSessionId = session.id;
+        if (TC_PLAN.round === 2) plan.completed = true;
+        NTData.saveTwoChairsPlan(plan);
+      }
+      location.href = TC_PLAN.round === 1
+        ? 'two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId)
+        : 'two-chairs-compare.html?pair=' + encodeURIComponent(TC_PLAN.pairId);
+      return;
     }
     location.href = `results.html?id=${encodeURIComponent(session.id)}`;
   }
@@ -437,7 +467,20 @@
           session.status = result.status;
           session.end_reason = result.end_reason || 'abandoned';
           session.analysis = result.analysis || null;
-          NTData.saveCompletedSession(session, scenario);
+          NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
+          if (TC_PLAN) {
+            const plan = NTData.getTwoChairsPlan();
+            if (plan && plan.pairId) {
+              plan['round' + TC_PLAN.round + 'Done'] = true;
+              plan.lastSessionId = session.id;
+              if (TC_PLAN.round === 2) plan.completed = true;
+              NTData.saveTwoChairsPlan(plan);
+            }
+            location.href = button.dataset.exitAction === 'home'
+              ? 'index.html'
+              : (TC_PLAN.round === 1 ? 'two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId) : 'two-chairs-compare.html?pair=' + encodeURIComponent(TC_PLAN.pairId));
+            return;
+          }
           location.href = button.dataset.exitAction === 'home'
             ? 'index.html'
             : `results.html?id=${encodeURIComponent(session.id)}`;
@@ -508,6 +551,10 @@
 
     document.title = sc.title + ' — тренировка';
     chatTitle.textContent = sc.title;
+    if (TC_PLAN) {
+      chatTitle.innerHTML = esc(sc.title) + ` <span class="tc-pill">2 стула · диалог ${TC_PLAN.round} из 2</span>`;
+      document.title = sc.title + ` — два стула · диалог ${TC_PLAN.round}`;
+    }
 
     bodies.topics.innerHTML = `
       <div class="chips">${sc.skills.map((k) => `<span class="chip">${esc(k)}</span>`).join('')}</div>

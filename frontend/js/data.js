@@ -264,7 +264,12 @@ window.NTData = (function () {
     const prev = record[slot] || {};
     record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, title: record.title, mode: record.mode };
     if (record.round === 1 && !record.secondRound) record.secondRound = null;
-    if (record.round === 2 && !record.firstRound) record.firstRound = null;
+    if (record.round === 2 && !record.firstRound) {
+      // Слот первого раунда мог быть создан ранее как заготовка (sessionId: null) —
+      // тогда он всё ещё пустой и его можно обнулить.
+      const r1 = record.firstRound;
+      if (r1 && !r1.sessionId) record.firstRound = null;
+    }
     return record;
   }
   function saveCompletedSession(raw, scenario, extra = {}) {
@@ -272,16 +277,22 @@ window.NTData = (function () {
     record.ended = raw.status === 'abandoned' ? 'exit' : 'finished';
     Object.assign(record, extra);
     if (record.twoChairs) updatePairRounds(record);
-    const rows = readHistory().filter((item) => item.id !== record.id);
+    // Важно: читаем историю БЕЗ фильтрации по id — вторая попытка того же
+    // раунда сохраняет тот же sessionId и должна заменить старую запись.
+    const allRows = readHistory();
+    const rows = allRows.filter((item) => item.id !== record.id);
     // Одна запись на режим «Два стула»: при сохранении второго раунда
     // обновляем существующую запись пары, а не плодим дубликаты.
     if (record.pairId) {
-      const existing = rows.find((item) => item.pairId === record.pairId);
+      const existing = allRows.find((item) => item.pairId === record.pairId && item.id !== record.id);
       if (existing) {
+        const thisRound = record.round === 1 ? 'firstRound' : 'secondRound';
+        const otherRound = record.round === 1 ? 'secondRound' : 'firstRound';
+        const other = existing[otherRound];
         const merged = { ...existing, ...record, id: existing.id, date: existing.date,
           round: Math.max(Number(existing.round) || 1, Number(record.round) || 1),
-          firstRound: record.round === 1 ? record : (existing.firstRound || null),
-          secondRound: record.round === 2 ? record : (existing.secondRound || null) };
+          [thisRound]: record,
+          [otherRound]: other && !other.sessionId ? null : (other || null) };
         if (merged.firstRound && merged.secondRound) merged.complete = true;
         rows.splice(rows.indexOf(existing), 1, merged);
         writeHistory(rows);
@@ -505,6 +516,20 @@ window.NTData = (function () {
   function findTwoChairsRecord(id) {
     return readHistory().find((item) => item.twoChairs && (item.pairId === id || item.id === id)) || null;
   }
+  /* Актуализация плана «Два стула»: объединяем с сохранённой записью пары,
+     чтобы флаги round1Done/round2Done не расходились с историей. */
+  function refreshTwoChairsPlan() {
+    const plan = getTwoChairsPlan();
+    if (!plan) return null;
+    const record = findTwoChairsRecord(plan.pairId);
+    if (record) {
+      plan.round1Done = Boolean(record.firstRound && record.firstRound.sessionId);
+      plan.round2Done = Boolean(record.secondRound && record.secondRound.sessionId);
+      if (plan.round1Done && plan.round2Done) plan.completed = true;
+      saveTwoChairsPlan(plan);
+    }
+    return plan;
+  }
 
   function health() { return api('/health'); }
   function modelsStatus(probe=false) {
@@ -576,7 +601,7 @@ window.NTData = (function () {
     openSession, loadSession, resumeOrCreateSession, playTurn, analyzeResult, askHint, abandonSession,
     generateScenario, refineScenario, listEditableScenarios, createScenario, updateScenario, validateScenario,
     publishScenario, createTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
-    findTwoChairsRecord, twoChairsExtra, updatePairRounds, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
+    findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
     health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
     exportLocalHistory, clearLocalHistory, localPrivacyInfo, prepareLocalReplay, getLocalReplay,
     topicIcon, labels: LABELS, formatKnowledgeText, formatKnowledgePlainText,

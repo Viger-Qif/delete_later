@@ -14,6 +14,37 @@
   const DIFFICULTY = CONFIG.difficultyMode || 'medium';
   const ENGINE_MODE=CONFIG.engineMode||'auto';
 
+  /* --- Интеграция режима «Два стула» (голосовые сессии) --- */
+  function twoChairsPlan() {
+    if (!window.NTData || !NTData.getTwoChairsPlan) return null;
+    const plan = NTData.getTwoChairsPlan();
+    if (!plan || plan.completed) return null;
+    const matches = plan.round === 2
+      ? (plan.invertedId && plan.invertedId === scenarioId)
+      : (plan.scenarioId && plan.scenarioId === scenarioId);
+    if (!matches) return null;
+    if (plan.round === 1 && plan.round1Done) return null;
+    if (plan.round === 2 && plan.round2Done) return null;
+    return plan;
+  }
+  const TC_PLAN = twoChairsPlan();
+  function tcFinishUrl(sessionId) {
+    if (!TC_PLAN) return `results.html?id=${encodeURIComponent(sessionId)}`;
+    return TC_PLAN.round === 1
+      ? 'two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId)
+      : 'two-chairs-compare.html?pair=' + encodeURIComponent(TC_PLAN.pairId);
+  }
+  function markRoundDone(sessionId) {
+    if (!TC_PLAN) return;
+    const plan = NTData.getTwoChairsPlan();
+    if (plan && plan.pairId) {
+      plan['round' + TC_PLAN.round + 'Done'] = true;
+      plan.lastSessionId = sessionId;
+      if (TC_PLAN.round === 2) plan.completed = true;
+      NTData.saveTwoChairsPlan(plan);
+    }
+  }
+
   const progressFill = document.getElementById('progress-fill');
   const progressBar  = document.getElementById('progress-bar');
   const progressLabel = document.getElementById('progress-label');
@@ -434,7 +465,7 @@
   async function finishRedirect() {
     if (done) return;
     done = true;
-    NTData.saveCompletedSession(session, scenario);
+    NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
     phase = 'done';
     stopCountdown();
     micBtn.disabled = true;
@@ -446,12 +477,14 @@
     if (session.status !== 'abandoned') {
       try {
         session.analysis = await NTData.analyzeResult(session.id);
-        NTData.saveCompletedSession(session, scenario);
+        NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
+        markRoundDone(session.id);
       } catch (error) {
         console.warn('Не удалось сформировать разбор:', error);
       }
     }
-    location.href = `results.html?id=${encodeURIComponent(session.id)}`;
+    markRoundDone(session.id);
+    location.href = tcFinishUrl(session.id);
   }
 
   function openExitDialog() {
@@ -489,10 +522,11 @@
           session.status = result.status;
           session.end_reason = result.end_reason || 'abandoned';
           session.analysis = result.analysis || null;
-          NTData.saveCompletedSession(session, scenario);
+          NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
+          markRoundDone(session.id);
           location.href = button.dataset.exitAction === 'home'
             ? 'index.html'
-            : `results.html?id=${encodeURIComponent(session.id)}`;
+            : tcFinishUrl(session.id);
         } catch (error) {
           modal.querySelector('p').textContent = error.message;
           modal.querySelectorAll('button').forEach((item) => { item.disabled = false; });

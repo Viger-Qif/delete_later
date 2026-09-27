@@ -40,7 +40,7 @@
     const button = $('tc-start-btn');
     button.disabled = true; button.textContent = 'Запускаю…';
     const plan = {
-      pairId: pair.scenario.twoChairsPair || pair.inverted.id,
+      pairId: pair.scenario.id,
       scenarioId: pair.scenario.id,
       invertedId: pair.inverted.id,
       title: pair.scenario.title,
@@ -48,7 +48,7 @@
       difficultyMode: CONFIG.difficultyMode || 'easy',
       engineMode: CONFIG.engineMode || 'auto',
       targetTurns: CONFIG.targetTurns || 10,
-      round: 1, round1Done: false, round2Done: false
+      round: 1, round1Done: false, round2Done: false, completed: false
     };
     NTData.saveTwoChairsPlan(plan);
     localStorage.setItem('nt_session_config', JSON.stringify({
