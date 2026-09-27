@@ -92,6 +92,10 @@ class Graph(BaseModel):
 class Scenario(BaseModel):
     id: str
     title: str
+    # Инверсия ролей для режима «Два стула»: id парного перевёрнутого
+    # сценария и id исходного сценария, от которого этот был получен.
+    two_chairs_pair: str | None = None
+    inverted_of: str | None = None
     description: str = ""
     difficulty: Difficulty = Difficulty.medium
     industry: str = ""
@@ -128,3 +132,31 @@ class Scenario(BaseModel):
 
     def edges_from(self, node_id: str) -> list[Edge]:
         return [e for e in self.graph.edges if e.from_ == node_id]
+
+    def inverted(self) -> "Scenario":
+        """Копия сценария с переставленными ролями (режим «Два стула»).
+
+        Роль пользователя становится ролью оппонента и наоборот; цель и
+        описание переформулируются под новую сторону. Поля графа, шкалы
+        заинтересованности и сложности сохраняются, чтобы диалог 2 шёл по
+        той же карте переговоров, но с обратной стороны стола.
+        """
+        import copy
+
+        swapped = copy.deepcopy(self)
+        original_user_role = self.user_role or "Участник переговоров"
+        original_opponent_role = self.opponent.role or "Собеседник по ситуации"
+        swapped.id = f"{self.id}_tc"
+        swapped.title = f"{self.title} · два стула"
+        swapped.user_role = original_opponent_role
+        swapped.opponent.role = original_user_role
+        swapped.goal = f"Смотреть на переговоры со стороны «{original_opponent_role}» и вести диалог из этой роли"
+        swapped.description = (
+            f"{self.description}\n\nИнверсия ролей: вы играете «{original_opponent_role}», "
+            f"собеседник играет «{original_user_role}»."
+        ).strip()
+        swapped.inverted_of = self.id
+        swapped.two_chairs_pair = self.id
+        swapped.published = False
+        swapped.scenario_type = "generated"
+        return swapped

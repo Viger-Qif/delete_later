@@ -37,6 +37,9 @@ class ScenarioRow(Base):
     published = Column(Boolean, default=False)
     archived = Column(Boolean, default=False)
     owner_id = Column(String, default="system")
+    # Инверсия ролей для режима «Два стула».
+    two_chairs_pair = Column(String, nullable=True)
+    inverted_of = Column(String, nullable=True)
 
 
 class ResultSummaryRow(Base):
@@ -191,6 +194,10 @@ def init_db() -> None:
                 connection.exec_driver_sql("ALTER TABLE scenarios ADD COLUMN opponent_state JSON")
             if "schema_version" not in scenario_columns:
                 connection.exec_driver_sql("ALTER TABLE scenarios ADD COLUMN schema_version INTEGER DEFAULT 2")
+            if "two_chairs_pair" not in scenario_columns:
+                connection.exec_driver_sql("ALTER TABLE scenarios ADD COLUMN two_chairs_pair VARCHAR")
+            if "inverted_of" not in scenario_columns:
+                connection.exec_driver_sql("ALTER TABLE scenarios ADD COLUMN inverted_of VARCHAR")
     # Additive migrations for installations upgraded from earlier releases.
     from sqlalchemy import inspect
     existing = {col["name"] for col in inspect(_engine).get_columns("sessions")}
@@ -203,7 +210,7 @@ def init_db() -> None:
         # create_all does not add columns to existing PostgreSQL tables.
         additive = {
             "sessions": {"difficulty_mode": "VARCHAR DEFAULT 'medium'", "target_turns": "INTEGER DEFAULT 10", "engine_mode": "VARCHAR DEFAULT 'auto'"},
-            "scenarios": {"user_role": "VARCHAR DEFAULT 'Участник переговоров'", "scenario_type": "VARCHAR DEFAULT 'curated'", "tags": "JSON", "knowledge_refs": "JSON", "coach_profile": "JSON", "opponent_state": "JSON", "schema_version": "INTEGER DEFAULT 2"},
+            "scenarios": {"user_role": "VARCHAR DEFAULT 'Участник переговоров'", "scenario_type": "VARCHAR DEFAULT 'curated'", "tags": "JSON", "knowledge_refs": "JSON", "coach_profile": "JSON", "opponent_state": "JSON", "schema_version": "INTEGER DEFAULT 2", "two_chairs_pair": "VARCHAR", "inverted_of": "VARCHAR"},
         }
         with _engine.begin() as connection:
             for table, columns in additive.items():

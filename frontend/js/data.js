@@ -162,7 +162,9 @@ window.NTData = (function () {
       coachProfile: s.coach_profile || {},
       graph: s.graph || null,
       interestRange: s.interest || { min: 0, max: 100 },
-      modes: s.modes || ['text']
+      modes: s.modes || ['text'],
+      twoChairsPair: s.two_chairs_pair || null,
+      invertedOf: s.inverted_of || null
     };
   }
 
@@ -246,10 +248,25 @@ window.NTData = (function () {
   function writeHistory(rows) {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(rows.slice(0, 50)));
   }
-  function saveCompletedSession(raw, scenario) {
+  function saveCompletedSession(raw, scenario, extra = {}) {
     const record = mapSession(raw, { [scenario.id]: scenario });
     record.ended = raw.status === 'abandoned' ? 'exit' : 'finished';
+    Object.assign(record, extra);
     const rows = readHistory().filter((item) => item.id !== record.id);
+    // Одна запись на режим «Два стула»: при сохранении второго раунда
+    // обновляем существующую запись пары, а не плодим дубликаты.
+    if (record.pairId) {
+      const existing = rows.find((item) => item.pairId === record.pairId);
+      if (existing) {
+        const merged = { ...existing, ...record, id: existing.id, date: existing.date,
+          firstRound: existing.firstRound || record.firstRound,
+          secondRound: record.secondRound || existing.secondRound };
+        rows.splice(rows.indexOf(existing), 1, merged);
+        writeHistory(rows);
+        localStorage.setItem(LATEST_KEY, merged.id);
+        return merged;
+      }
+    }
     rows.unshift(record);
     writeHistory(rows);
     localStorage.setItem(LATEST_KEY, record.id);
@@ -269,7 +286,11 @@ window.NTData = (function () {
           messages: item.messages || [],
           interestHistory: item.interestHistory || [],
           analysis: item.analysis || remote.analysis,
-          score: item.score ?? remote.score
+          score: item.score ?? remote.score,
+          twoChairs: item.twoChairs || undefined,
+          pairId: item.pairId || undefined,
+          firstRound: item.firstRound || undefined,
+          secondRound: item.secondRound || undefined
         } : item);
       });
       return [...merged.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -292,7 +313,11 @@ window.NTData = (function () {
         messages: local.messages || [],
         interestHistory: local.interestHistory || [],
         analysis: local.analysis || remote.analysis,
-        score: local.score ?? remote.score
+        score: local.score ?? remote.score,
+        twoChairs: local.twoChairs || undefined,
+        pairId: local.pairId || undefined,
+        firstRound: local.firstRound || undefined,
+        secondRound: local.secondRound || undefined
       } : remote;
     } catch (error) {
       if (local) return local;
@@ -435,6 +460,28 @@ window.NTData = (function () {
     return api(`/scenarios/${id}/publish`, { method: 'POST', body: JSON.stringify({ published: true }) });
   }
 
+  /* --- Режим «Два стула» --- */
+  const TWO_CHAIRS_PLAN_KEY = 'nt_two_chairs_plan_v1';
+  function createTwoChairsPair(scenarioId) {
+    scenarioCache = null;
+    return api(`/scenarios/${encodeURIComponent(scenarioId)}/two-chairs`, { method: 'POST' })
+      .then((data) => ({ scenario: mapScenario(data.scenario), inverted: mapScenario(data.inverted), created: data.created }));
+  }
+  function saveTwoChairsPlan(plan) {
+    try { localStorage.setItem(TWO_CHAIRS_PLAN_KEY, JSON.stringify(plan)); } catch (_) {}
+    return plan;
+  }
+  function getTwoChairsPlan() {
+    try {
+      const plan = JSON.parse(localStorage.getItem(TWO_CHAIRS_PLAN_KEY) || 'null');
+      return plan && plan.pairId ? plan : null;
+    } catch (_) { return null; }
+  }
+  function clearTwoChairsPlan() { localStorage.removeItem(TWO_CHAIRS_PLAN_KEY); }
+  function findTwoChairsRecord(id) {
+    return readHistory().find((item) => item.twoChairs && (item.pairId === id || item.id === id)) || null;
+  }
+
   function health() { return api('/health'); }
   function modelsStatus(probe=false) {
     const key='nt_models_status_v1', maxAge=5*60*1000;
@@ -504,7 +551,9 @@ window.NTData = (function () {
     listSessions, listResults, getSession, getSessionResult,
     openSession, loadSession, resumeOrCreateSession, playTurn, analyzeResult, askHint, abandonSession,
     generateScenario, refineScenario, listEditableScenarios, createScenario, updateScenario, validateScenario,
-    publishScenario, health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
+    publishScenario, createTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
+    findTwoChairsRecord, TWO_CHAIRS_PLAN_KEY,
+    health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
     exportLocalHistory, clearLocalHistory, localPrivacyInfo, prepareLocalReplay, getLocalReplay,
     topicIcon, labels: LABELS, formatKnowledgeText, formatKnowledgePlainText,
     methods: METHODS, methodForRef, methodHref, methodLinks, errorMessage

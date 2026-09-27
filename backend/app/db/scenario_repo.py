@@ -32,6 +32,8 @@ def row_to_scenario(row: ScenarioRow) -> Scenario:
         published=row.published,
         archived=row.archived,
         owner_id=row.owner_id or "system",
+        two_chairs_pair=getattr(row, "two_chairs_pair", None),
+        inverted_of=getattr(row, "inverted_of", None),
     )
 
 
@@ -60,6 +62,8 @@ def scenario_to_row(sc: Scenario, row: ScenarioRow | None = None) -> ScenarioRow
     row.published = sc.published
     row.archived = sc.archived
     row.owner_id = sc.owner_id
+    row.two_chairs_pair = sc.two_chairs_pair
+    row.inverted_of = sc.inverted_of
     return row
 
 
