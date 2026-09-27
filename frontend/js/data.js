@@ -162,7 +162,9 @@ window.NTData = (function () {
       coachProfile: s.coach_profile || {},
       graph: s.graph || null,
       interestRange: s.interest || { min: 0, max: 100 },
-      modes: s.modes || ['text']
+      modes: s.modes || ['text'],
+      twoChairsPair: s.two_chairs_pair || null,
+      invertedOf: s.inverted_of || null
     };
   }
 
@@ -225,7 +227,18 @@ window.NTData = (function () {
       // Own unpublished scenarios are intentionally absent from the public
       // catalog.  Ask the protected detail endpoint as a fallback so a user
       // can still open a draft from the profile page.
-      return api(`/scenarios/${encodeURIComponent(id)}`).then(mapScenario).catch(() => null);
+      return api(`/scenarios/${encodeURIComponent(id)}`).then(mapScenario).catch((error) => {
+        // Самоисцеление «Два стула»: инвертированный сценарий мог исчезнуть
+        // после перезапуска сервера. Если это id партнёра из активного плана
+        // пары — просим бэкенд пересоздать пару и повторяем загрузку один раз.
+        if (error && error.status !== 404) return null;
+        const plan = getTwoChairsPlan();
+        if (plan && plan.pairId && id === plan.invertedId) {
+          return fetchTwoChairsPair(plan.pairId)
+            .then(() => api(`/scenarios/${encodeURIComponent(id)}`).then(mapScenario).catch(() => null));
+        }
+        return null;
+      });
     });
   }
 
@@ -246,10 +259,101 @@ window.NTData = (function () {
   function writeHistory(rows) {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(rows.slice(0, 50)));
   }
-  function saveCompletedSession(raw, scenario) {
+  /* Итоговая отметка раунда для бейджей в истории/на паузе: ✓ / ⚠ / ✗ */
+  function pairVerdict(record) {
+    if (!record) return null;
+    if (record.ended === 'exit') return '✗';
+    const interest = Number(record.interest);
+    if (Number.isFinite(interest)) {
+      if (interest >= 70) return '✓';
+      if (interest >= 45) return '⚠';
+      return '✗';
+    }
+    const score = Number(record.score);
+    if (Number.isFinite(score)) {
+      if (score >= 70) return '✓';
+      if (score >= 45) return '⚠';
+      return '✗';
+    }
+    return '—';
+  }
+  /* Хелпер режима «Два стула»: раунд (1 или 2) + id пары -> extra-поля записи истории */
+  function twoChairsExtra(plan, round) {
+    if (!plan || !plan.pairId || !round) return {};
+    // ВАЖНО: слоты раундов НЕ передаются заранее — их заполняет
+    // updatePairRounds из фактических данных сессии. Заготовка со
+    // значениями null сбивала merge и экран сравнения читал «пустой» раунд.
+    return {
+      twoChairs: true,
+      pairId: plan.pairId,
+      round
+    };
+  }
+  function updatePairRounds(record) {
+    const slot = record.round === 1 ? 'firstRound' : 'secondRound';
+    const prev = record[slot] || {};
+    // interest в слот пары кладём уже нормализованным (в процентах) — mapSession
+    // это делает сам; поле нужно для бейджа ✓/⚠/✗ в истории и на паузе.
+    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, ended: record.ended, verdict: pairVerdict(record), title: record.title, mode: record.mode, role: record.role || prev.role || null, counterpart: record.counterpart || record.opponentRole || prev.counterpart || null };
+    if (record.round === 1 && !record.secondRound) record.secondRound = null;
+    if (record.round === 2 && !record.firstRound) {
+      // Слот первого раунда мог быть создан ранее как заготовка (sessionId: null) —
+      // тогда он всё ещё пустой и его можно обнулить.
+      const r1 = record.firstRound;
+      if (r1 && !r1.sessionId) record.firstRound = null;
+    }
+    return record;
+  }
+  function saveCompletedSession(raw, scenario, extra = {}) {
     const record = mapSession(raw, { [scenario.id]: scenario });
     record.ended = raw.status === 'abandoned' ? 'exit' : 'finished';
-    const rows = readHistory().filter((item) => item.id !== record.id);
+    Object.assign(record, extra);
+    // Имя роли пользователя — для карточек сравнения без обращения к плану.
+    if (scenario) {
+      record.role = scenario.user_role || scenario.userRole || null;
+      // scenario из getScenario уже нормализован: counterpart = роль оппонента.
+      record.counterpart = scenario.counterpart || scenario.counterpart_role || (scenario.opponent && scenario.opponent.role) || null;
+    }
+    if (record.twoChairs) updatePairRounds(record);
+    // Важно: читаем историю БЕЗ фильтрации по id — вторая попытка того же
+    // раунда сохраняет тот же sessionId и должна заменить старую запись.
+    const allRows = readHistory();
+    const rows = allRows.filter((item) => item.id !== record.id);
+    // Одна запись на режим «Два стула»: при сохранении второго раунда
+    // обновляем существующую запись пары, а не плодим дубликаты.
+    if (record.pairId) {
+      const existing = allRows.find((item) => item.pairId === record.pairId && item.id !== record.id);
+      if (existing) {
+        const thisRound = record.round === 1 ? 'firstRound' : 'secondRound';
+        const otherRound = record.round === 1 ? 'secondRound' : 'firstRound';
+        // Предыдущее значение этого раунда в записи пары (актуально при
+        // повторном сохранении того же session_id: не затираем другой слот).
+        const prevThis = existing[thisRound];
+        const other = existing[otherRound];
+        // Слот текущего раунда — всегда свежие данные saveCompletedSession
+        // (updatePairRounds уже заполнил sessionId/score/interest/verdict).
+        // Если по какой-то причине слот пустой, а в самой записи пары он был
+        // заполнен ранее — не теряем его.
+        const thisSlot = record[thisRound] && record[thisRound].sessionId
+          ? record[thisRound]
+          : (prevThis && prevThis.sessionId ? prevThis : record[thisRound] || null);
+        const merged = { ...existing, ...record, id: existing.id, date: existing.date,
+          round: Math.max(Number(existing.round) || 1, Number(record.round) || 1),
+          [thisRound]: thisSlot && thisSlot.sessionId ? thisSlot : null,
+          [otherRound]: other && !other.sessionId ? null : (other || null) };
+        // Если этот же раунд уже был сыгран другой сессией — сохраняем её в
+        // extra-слоте firstExtra/secondExtra, чтобы история осталась полной.
+        if (prevThis && prevThis.sessionId && prevThis.sessionId !== record.id) {
+          merged[thisRound === 'firstRound' ? 'secondExtra' : 'firstExtra'] =
+            [].concat(merged[thisRound === 'firstRound' ? 'secondExtra' : 'firstExtra'] || [], prevThis);
+        }
+        if (merged.firstRound && merged.secondRound) merged.complete = true;
+        rows.splice(rows.indexOf(existing), 1, merged);
+        writeHistory(rows);
+        localStorage.setItem(LATEST_KEY, merged.id);
+        return merged;
+      }
+    }
     rows.unshift(record);
     writeHistory(rows);
     localStorage.setItem(LATEST_KEY, record.id);
@@ -269,13 +373,24 @@ window.NTData = (function () {
           messages: item.messages || [],
           interestHistory: item.interestHistory || [],
           analysis: item.analysis || remote.analysis,
-          score: item.score ?? remote.score
+          score: item.score ?? remote.score,
+          twoChairs: item.twoChairs || undefined,
+          pairId: item.pairId || undefined,
+          round: item.round || undefined,
+          firstRound: item.firstRound || undefined,
+          secondRound: item.secondRound || undefined,
+          complete: item.complete || undefined
         } : item);
       });
       return [...merged.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
     });
   }
   function listSessions() { return fetchSessions(); }
+  /* Быстрая локальная история (тот же формат, что у listSessions) для страниц,
+     которым нужен режим «Два стула» без серверного round-trip. */
+  function listLocalHistory() {
+    return readHistory().slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
   function listResults() { return api('/sessions/results').then((data) => data.items || []); }
   async function getSession(id) {
     const all = await fetchSessions();
@@ -292,7 +407,11 @@ window.NTData = (function () {
         messages: local.messages || [],
         interestHistory: local.interestHistory || [],
         analysis: local.analysis || remote.analysis,
-        score: local.score ?? remote.score
+        score: local.score ?? remote.score,
+        twoChairs: local.twoChairs || undefined,
+        pairId: local.pairId || undefined,
+        firstRound: local.firstRound || undefined,
+        secondRound: local.secondRound || undefined
       } : remote;
     } catch (error) {
       if (local) return local;
@@ -435,6 +554,85 @@ window.NTData = (function () {
     return api(`/scenarios/${id}/publish`, { method: 'POST', body: JSON.stringify({ published: true }) });
   }
 
+  /* --- Режим «Два стула» --- */
+  const TWO_CHAIRS_PLAN_KEY = 'nt_two_chairs_plan_v1';
+  function createTwoChairsPair(scenarioId) {
+    scenarioCache = null;
+    return api(`/scenarios/${encodeURIComponent(scenarioId)}/two-chairs`, { method: 'POST' })
+      .then((data) => ({ scenario: mapScenario(data.scenario), inverted: mapScenario(data.inverted), created: data.created }));
+  }
+  /* GET-вариант: возвращает пару и молча воссоздаёт инвертированный
+     сценарий, если он пропал после перезапуска сервера. Используется
+     экранами паузы/сравнения как страховка от «inverted не найден». */
+  function fetchTwoChairsPair(scenarioId) {
+    scenarioCache = null;
+    return api(`/scenarios/${encodeURIComponent(scenarioId)}/two-chairs`)
+      .then((data) => ({ scenario: mapScenario(data.scenario), inverted: mapScenario(data.inverted), created: data.created }));
+  }
+  function saveTwoChairsPlan(plan) {
+    try { localStorage.setItem(TWO_CHAIRS_PLAN_KEY, JSON.stringify(plan)); } catch (_) {}
+    return plan;
+  }
+  function getTwoChairsPlan() {
+    try {
+      const plan = JSON.parse(localStorage.getItem(TWO_CHAIRS_PLAN_KEY) || 'null');
+      return plan && plan.pairId ? plan : null;
+    } catch (_) { return null; }
+  }
+  function clearTwoChairsPlan() { localStorage.removeItem(TWO_CHAIRS_PLAN_KEY); }
+  function findTwoChairsRecord(id) {
+    if (!id) return null;
+    // Единый источник данных для паузы и сравнения: если по pairId есть
+    // несколько записей (merge-гонка, старая история с дублями) — берём ту,
+    // где заполнено больше раундов.
+    const rows = readHistory().filter((item) => item.twoChairs && (item.pairId === id || item.id === id));
+    const filled = (row) => Number(Boolean(row.firstRound && row.firstRound.sessionId)) +
+      Number(Boolean(row.secondRound && row.secondRound.sessionId));
+    rows.sort((a, b) => filled(b) - filled(a));
+    return rows[0] || null;
+  }
+  /* Актуализация плана «Два стула»: объединяем с сохранённой записью пары,
+     чтобы флаги round1Done/round2Done не расходились с историей. */
+  function refreshTwoChairsPlan() {
+    const plan = getTwoChairsPlan();
+    if (!plan) return null;
+    const record = findTwoChairsRecord(plan.pairId);
+    if (record) {
+      plan.round1Done = Boolean(record.firstRound && record.firstRound.sessionId);
+      plan.round2Done = Boolean(record.secondRound && record.secondRound.sessionId);
+      if (plan.round1Done && plan.round2Done) plan.completed = true;
+      saveTwoChairsPlan(plan);
+    }
+    return plan;
+  }
+  /* Одна запись на весь режим «Два стула»: если в локальной истории уже есть
+     запись пары с обоими сыгранными раундами, все остальные записи этой пары —
+     дубликаты (например, после merge-гонки), их можно вычистить. */
+  function isPairComplete(row, pairId) {
+    return Boolean(row && row.twoChairs && row.pairId === pairId &&
+      row.firstRound && row.firstRound.sessionId &&
+      row.secondRound && row.secondRound.sessionId);
+  }
+  function prunePairDuplicates(pairId) {
+    if (!pairId) return;
+    const rows = readHistory();
+    if (!rows.some((row) => isPairComplete(row, pairId))) return;
+    const kept = rows.filter((row) => !(row.pairId === pairId) || isPairComplete(row, pairId));
+    if (kept.length !== rows.length) writeHistory(kept);
+  }
+  /* Единый нормализатор слотов пары: старые записи могли содержать
+     заготовки { sessionId: null }. Для UI раунд считается сыгранным
+     только если есть sessionId. */
+  function normalizePairSlot(slot) {
+    return slot && slot.sessionId ? slot : null;
+  }
+  function pairRounds(record) {
+    if (!record) return { r1: null, r2: null, complete: false };
+    const r1 = normalizePairSlot(record.firstRound);
+    const r2 = normalizePairSlot(record.secondRound);
+    return { r1, r2, complete: Boolean(r1 && r2) };
+  }
+
   function health() { return api('/health'); }
   function modelsStatus(probe=false) {
     const key='nt_models_status_v1', maxAge=5*60*1000;
@@ -504,7 +702,10 @@ window.NTData = (function () {
     listSessions, listResults, getSession, getSessionResult,
     openSession, loadSession, resumeOrCreateSession, playTurn, analyzeResult, askHint, abandonSession,
     generateScenario, refineScenario, listEditableScenarios, createScenario, updateScenario, validateScenario,
-    publishScenario, health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
+    publishScenario, createTwoChairsPair, fetchTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
+    findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, pairVerdict, pairRounds, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
+    listLocalHistory, prunePairDuplicates,
+    health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
     exportLocalHistory, clearLocalHistory, localPrivacyInfo, prepareLocalReplay, getLocalReplay,
     topicIcon, labels: LABELS, formatKnowledgeText, formatKnowledgePlainText,
     methods: METHODS, methodForRef, methodHref, methodLinks, errorMessage

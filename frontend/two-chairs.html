@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="/static/assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<title>Режим двух стульев — Negotiation Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="/static/css/base.css?v=29" rel="stylesheet"/>
+<link href="/static/css/two-chairs.css?v=3" rel="stylesheet"/>
+</head>
+<body>
+<header class="header"><div class="container header__inner">
+<a class="brand" aria-label="На главную" href="index.html"><span class="brand__logo">N</span><span class="brand__name">Negotiation Lab</span></a>
+<nav aria-label="Разделы" class="handbook-nav"><a href="catalog.html">Сценарии</a><a href="two-chairs.html">Режим двух стульев</a><a href="stats.html">История</a><a href="profile.html">Профиль</a></nav>
+</div></header>
+<main class="container tc-page">
+<div class="page-head">
+<p class="page-eyebrow">Режим «Два стула»</p>
+<h1 class="page-head__title">Один разговор — две стороны</h1>
+<p class="tc-lead">Сначала вы ведёте переговоры в своей роли. Затем меняетесь местами: вы играете роль собеседника, а ИИ повторяет ваши исходные интересы. В конце — сравнительный анализ обеих позиций.</p>
+</div>
+<section class="tc-card" aria-labelledby="tc-start-title">
+<h2 id="tc-start-title" class="tc-card__title">Начать раунд</h2>
+<p class="tc-muted">Выберите сценарий из каталога или свой пользовательский. На следующем экране подтвердите запуск диалога 1.</p>
+<label class="tc-field"><span>Сценарий</span>
+<select id="tc-scenario-select"><option value="">Загружаем сценарии…</option></select>
+</label>
+<div class="tc-actions">
+<a class="btn btn--primary" href="#" id="tc-start-btn">Выбрать и начать</a>
+<a class="btn btn--secondary" href="scenario-studio.html">Создать свой сценарий</a>
+</div>
+</section>
+<section class="tc-card" id="tc-resume-card" hidden aria-labelledby="tc-resume-title">
+<h2 id="tc-resume-title" class="tc-card__title">Есть незавершённый режим</h2>
+<div id="tc-resume-body"></div>
+</section>
+<section class="tc-card" aria-labelledby="tc-history-title">
+<h2 id="tc-history-title" class="tc-card__title">Пройденные пары</h2>
+<div id="tc-history" class="tc-history"><p class="tc-muted">Пока нет завершённых режимов «Два стула».</p></div>
+</section>
+</main>
+<script src="/static/js/data.js?v=29"></script>
+<script src="/static/js/two-chairs.js?v=1"></script>
+</body>
+</html>

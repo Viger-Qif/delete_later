@@ -13,6 +13,37 @@
   const DIFFICULTY = CONFIG.difficultyMode || 'medium';
   const ENGINE_MODE=CONFIG.engineMode||'auto';
 
+  /* --- Интеграция режима «Два стула»: план пары определяет поведение --- */
+  function twoChairsPlan() {
+    const plan = NTData.getTwoChairsPlan();
+    if (!plan || plan.completed) return null;
+    // План относится к текущему запуску, только если сценарий совпадает
+    // с раундом плана и раунд ещё не сыгран.
+    const matches = plan.round === 2
+      ? (plan.invertedId && plan.invertedId === scenarioId)
+      : (plan.scenarioId && plan.scenarioId === scenarioId);
+    if (!matches) return null;
+    if (plan.round === 1 && plan.round1Done) return null;
+    if (plan.round === 2 && plan.round2Done) return null;
+    return plan;
+  }
+  const TC_PLAN = twoChairsPlan();
+
+  /* --- Индикация офлайн-режима (без API-ключа или при сбое облака) --- */
+  let OFFLINE_MODE = false;
+  function setOfflineMode(on, reason) {
+    if (!on || OFFLINE_MODE) return;
+    OFFLINE_MODE = true;
+    try { localStorage.setItem('nt_last_offline', JSON.stringify({ at: Date.now(), reason: reason || '' })); } catch (_) {}
+    if (runtimeStatus) {
+      runtimeStatus.textContent = 'Офлайн-режим · экспертная система';
+      runtimeStatus.dataset.responder = 'expert_system';
+      runtimeStatus.classList.add('is-offline');
+    }
+    addMsg('Облачный ИИ недоступен — диалог продолжается в офлайн-режиме на экспертной системе. Записи сохранены полностью.', 'system');
+  }
+  NTData.health().then((h) => { if (h && h.llm_mode === 'expert-system') setOfflineMode(true, 'no-key'); }).catch(() => {});
+
   const progressFill = document.getElementById('progress-fill');
   const progressBar  = document.getElementById('progress-bar');
   const progressLabel = document.getElementById('progress-label');
@@ -167,7 +198,7 @@
   }
 
   /* --- Чат --- */
-  function runtimeLabel(m){if(!m||!m.responder)return '';if(m.responder==='scripted')return '';const src=m.responder==='cloud_ai'?'Облачный ИИ':m.responder==='expert_system'?'Экспертная система':m.responder;return `${src}${m.model?' · '+m.model:''}${m.latency_ms?' · '+m.latency_ms+' мс':''}${m.fallback_used?' · резерв':''}`;}function updateRuntime(m){const label=runtimeLabel(m);if(!label)return;runtimeStatus.textContent=label;runtimeStatus.dataset.responder=m.responder||'';runtimeStatus.classList.toggle('is-fallback',Boolean(m.fallback_used));}
+  function runtimeLabel(m){if(!m||!m.responder)return '';if(m.responder==='scripted')return '';const src=m.responder==='cloud_ai'?'Облачный ИИ':m.responder==='expert_system'?'Экспертная система':m.responder;return `${src}${m.model?' · '+m.model:''}${m.latency_ms?' · '+m.latency_ms+' мс':''}${m.fallback_used?' · резерв':''}`;}function updateRuntime(m){const label=runtimeLabel(m);if(!label)return;if(m.responder==='expert_system')setOfflineMode(true,'expert-answer');runtimeStatus.textContent=(m.responder==='expert_system'&&OFFLINE_MODE)?'Офлайн-режим · экспертная система':label;runtimeStatus.dataset.responder=m.responder||'';runtimeStatus.classList.toggle('is-fallback',Boolean(m.fallback_used));}
   function addMsg(text,who,runtime=null){const el=document.createElement('div');el.className='msg msg--'+who;const body=document.createElement('span');body.textContent=text;el.appendChild(body);chatLog.appendChild(el);chatLog.scrollTop=chatLog.scrollHeight;return el;}
 
   function showTyping() {
@@ -375,6 +406,7 @@
       chatInput.value = text;
       updateChatCounter();
       addMsg(error.message, 'system');
+      setOfflineMode(true, 'turn-error');
       NTSecretary.warning('Не удалось получить ответ. Состояние диалога сверено с сервером.');
     } finally {
       sending = false;
@@ -385,7 +417,7 @@
   async function finishRedirect() {
     if (done) return;
     done = true;
-    NTData.saveCompletedSession(session, scenario);
+    NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
     stopTimer();
     chatInput.disabled = true;
     voiceInputBtn.disabled = true;
@@ -397,10 +429,24 @@
     if (session.status !== 'abandoned') {
       try {
         session.analysis = await NTData.analyzeResult(session.id);
-        NTData.saveCompletedSession(session, scenario);
+        NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
       } catch (error) {
         console.warn('Не удалось сформировать разбор:', error);
       }
+    }
+    /* Режим «Два стула»: раунд 1 -> экран паузы, раунд 2 -> сравнительный анализ. */
+    if (TC_PLAN) {
+      const plan = NTData.getTwoChairsPlan();
+      if (plan && plan.pairId) {
+        plan['round' + TC_PLAN.round + 'Done'] = true;
+        plan.lastSessionId = session.id;
+        if (TC_PLAN.round === 2) plan.completed = true;
+        NTData.saveTwoChairsPlan(plan);
+      }
+      location.href = TC_PLAN.round === 1
+        ? 'two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId)
+        : 'two-chairs-compare.html?pair=' + encodeURIComponent(TC_PLAN.pairId);
+      return;
     }
     location.href = `results.html?id=${encodeURIComponent(session.id)}`;
   }
@@ -437,7 +483,20 @@
           session.status = result.status;
           session.end_reason = result.end_reason || 'abandoned';
           session.analysis = result.analysis || null;
-          NTData.saveCompletedSession(session, scenario);
+          NTData.saveCompletedSession(session, scenario, NTData.twoChairsExtra(TC_PLAN, TC_PLAN && TC_PLAN.round));
+          if (TC_PLAN) {
+            const plan = NTData.getTwoChairsPlan();
+            if (plan && plan.pairId) {
+              plan['round' + TC_PLAN.round + 'Done'] = true;
+              plan.lastSessionId = session.id;
+              if (TC_PLAN.round === 2) plan.completed = true;
+              NTData.saveTwoChairsPlan(plan);
+            }
+            location.href = button.dataset.exitAction === 'home'
+              ? 'index.html'
+              : (TC_PLAN.round === 1 ? 'two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId) : 'two-chairs-compare.html?pair=' + encodeURIComponent(TC_PLAN.pairId));
+            return;
+          }
           location.href = button.dataset.exitAction === 'home'
             ? 'index.html'
             : `results.html?id=${encodeURIComponent(session.id)}`;
@@ -497,17 +556,36 @@
   }
 
   /* --- Старт: возобновляем активную сессию или создаём новую --- */
-  Promise.all([
-    NTData.getScenario(scenarioId),
-    NTData.resumeOrCreateSession(scenarioId,'text',DIFFICULTY,TARGET_TURNS,ENGINE_MODE),
-    NTData.knowledgeStatus().catch(() => ({ enabled: false, chunks: 0 }))
-  ]).then(([sc, sess, rag]) => {
-    if (!sc || !sess) throw new Error('Не удалось начать сессию.');
+  function scenarioErrorState(message) {
+    const wrap = document.querySelector('.chat') || document.body;
+    const box = document.createElement('div');
+    box.className = 'scenario-error';
+    box.style.cssText = 'margin:auto;max-width:420px;text-align:center;padding:32px;display:flex;flex-direction:column;gap:16px;align-items:center';
+    box.innerHTML = '<p class="scenario-error__title" style="font-size:18px;font-weight:700">Сценарий не удалось загрузить</p>' +
+      `<p class="scenario-error__text">${esc(message || 'Сценарий не найден. Возможно, он был удалён или недоступен.')}</p>` +
+      '<div class="scenario-error__actions" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+      (TC_PLAN ? '<a class="btn btn--primary" style="min-height:44px" href="two-chairs-pause.html?pair=' + encodeURIComponent(TC_PLAN.pairId) + '">Вернуться к паузе</a>' : '') +
+      '<a class="btn" style="min-height:44px" href="index.html">На главную</a></div>';
+    if (wrap && wrap.parentNode) wrap.replaceWith(box); else document.body.appendChild(box);
+  }
+  NTData.getScenario(scenarioId).then((sc) => {
+    if (!sc) throw Object.assign(new Error('Сценарий не найден. Он мог быть создан в другой сессии сервера — вернитесь к паузе режима «Два стула» и начните диалог заново.'), { scenarioMissing: true });
+    return Promise.all([
+      sc,
+      NTData.resumeOrCreateSession(scenarioId,'text',DIFFICULTY,TARGET_TURNS,ENGINE_MODE),
+      NTData.knowledgeStatus().catch(() => ({ enabled: false, chunks: 0 }))
+    ]);
+  }).then(([sc, sess, rag]) => {
+    if (!sess) throw new Error('Не удалось начать сессию.');
     scenario = sc;
     session=sess;NTSecretary.idle();runtimeStatus.textContent=ENGINE_MODE==='expert'?'Экспертная система выбрана':ENGINE_MODE==='cloud'?'Только облачный ИИ':'Авто: ИИ → эксперт';
 
     document.title = sc.title + ' — тренировка';
     chatTitle.textContent = sc.title;
+    if (TC_PLAN) {
+      chatTitle.innerHTML = esc(sc.title) + ` <span class="tc-pill">2 стула · диалог ${TC_PLAN.round} из 2</span>`;
+      document.title = sc.title + ` — два стула · диалог ${TC_PLAN.round}`;
+    }
 
     bodies.topics.innerHTML = `
       <div class="chips">${sc.skills.map((k) => `<span class="chip">${esc(k)}</span>`).join('')}</div>
@@ -528,7 +606,8 @@
     startTimer();
     setTimeout(() => startTour(false), 900);
   }).catch((error) => {
-    addMsg(error.message, 'system');
+    if (error && error.scenarioMissing) scenarioErrorState(error.message);
+    else addMsg(error.message, 'system');
   });
 })();
 

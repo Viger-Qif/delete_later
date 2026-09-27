@@ -320,3 +320,71 @@ def publish_scenario(scenario_id: str, payload: PublishRequest, user=Depends(_cu
         return {"ok": True, "published": payload.published}
     finally:
         db.close()
+
+
+def _ensure_pair(db: Session, sc: Scenario, user) -> dict:
+    """Внутренняя общая логика пары «Два стула».
+
+    Возвращает пару, восстанавливая инвертированный сценарий из базового
+    через inverted(), если он отсутствует (например, после перезапуска
+    сервера с новой/очищенной БД). Идемпотентна.
+    """
+    # Уже существующая пара возвращается без пересоздания.
+    if sc.two_chairs_pair:
+        partner = scenario_repo.get_scenario(db, sc.two_chairs_pair)
+        if partner is not None:
+            return {"scenario": _public_payload(sc), "inverted": _public_payload(partner), "created": False}
+    existing_inverted = scenario_repo.get_scenario(db, f"{sc.id}_tc")
+    if existing_inverted is not None and existing_inverted.inverted_of == sc.id:
+        scenario_repo.update_scenario(db, sc.model_copy(update={"two_chairs_pair": existing_inverted.id}))
+        return {"scenario": _public_payload(sc), "inverted": _public_payload(existing_inverted), "created": False}
+
+    inverted = sc.inverted()
+    inverted.owner_id = user.id if user.id != "system" else sc.owner_id
+    sc_paired = sc.model_copy(update={"two_chairs_pair": inverted.id})
+    try:
+        scenario_repo.create_scenario(db, inverted)
+    except Exception:  # гонка двух параллельных запросов — забираем существующего партнёра
+        db.rollback()
+        partner = scenario_repo.get_scenario(db, inverted.id)
+        if partner is None:
+            raise HTTPException(status_code=500, detail="Не удалось создать перевёрнутый сценарий")
+        return {"scenario": _public_payload(sc), "inverted": _public_payload(partner), "created": False}
+    scenario_repo.update_scenario(db, sc_paired)
+    return {"scenario": _public_payload(sc_paired), "inverted": _public_payload(inverted), "created": True}
+
+
+@router.post("/{scenario_id}/two-chairs", status_code=201)
+def create_two_chairs_pair(scenario_id: str, user=Depends(_current_user)):
+    """Режим «Два стула»: создать (или вернуть) перевёрнутого партнёра сценария.
+
+    Диалог 2 проходит по тому же графу переговоров, но пользователь играет
+    роль оппонента, а ИИ — исходную роль пользователя. Пара связывается
+    полями inverted_of / two_chairs_pair; повторный вызов идемпотентен.
+    """
+    db: Session = get_sessionmaker()()
+    try:
+        sc = scenario_repo.get_scenario(db, scenario_id)
+        if sc is None or (not sc.published and sc.owner_id != user.id):
+            raise HTTPException(status_code=404, detail="Сценарий не найден")
+        return _ensure_pair(db, sc, user)
+    finally:
+        db.close()
+
+
+@router.get("/{scenario_id}/two-chairs")
+def get_two_chairs_pair(scenario_id: str, user=Depends(_current_user)):
+    """Пара «Два стула» для экрана паузы/сравнения/истории.
+
+    Если инвертированный сценарий пропал (перезапуск сервера, новая БД),
+    он молча воссоздаётся из базового — старые ссылки вида
+    two-chairs-compare.html?pair=<id> продолжают работать.
+    """
+    db: Session = get_sessionmaker()()
+    try:
+        sc = scenario_repo.get_scenario(db, scenario_id)
+        if sc is None or (not sc.published and sc.owner_id != user.id):
+            raise HTTPException(status_code=404, detail="Сценарий не найден")
+        return _ensure_pair(db, sc, user)
+    finally:
+        db.close()
