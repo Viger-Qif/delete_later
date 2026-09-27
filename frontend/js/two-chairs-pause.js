@@ -12,6 +12,13 @@
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const params = new URLSearchParams(location.search);
 
+  function fmtScore10(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '—';
+    const tens = n > 10 ? n / 10 : n;
+    return (Math.round(tens * 10) / 10).toString().replace('.', ',');
+  }
+
   function verdict(interest, ended) {
     if (ended === 'exit') return { icon: '✗', cls: 'tc-verdict--muted', text: 'Диалог прерван' };
     if (interest >= 70) return { icon: '✓', cls: 'tc-verdict--success', text: 'Договорённость близка' };
@@ -47,7 +54,7 @@
         <div class="tc-bar__label"><span>Финальная заинтересованность</span><b>${Number(r1.interest) || 0}%</b></div>
         <div class="tc-bar__track"><div class="tc-bar__fill" style="width:${Math.max(3, Number(r1.interest) || 0)}%"></div></div>
       </div>
-      <p class="tc-muted">${Number.isFinite(Number(r1.score)) ? 'Оценка разборa: <b>' + r1.score + ' баллов</b> · ' : ''}Роль была: <b>${esc(baseSc ? baseSc.userRole : (r1.title || '—'))}</b></p>`;
+      <p class="tc-muted">${Number.isFinite(Number(r1.score)) ? 'Оценка разбора: <b>' + fmtScore10(r1.score) + '/10</b> · ' : ''}Роль была: <b>${esc(baseSc ? baseSc.userRole : (r1.title || '—'))}</b></p>`;
 
     const yourNewRole = invSc ? invSc.userRole : 'Роль собеседника из диалога 1';
     const theirRole = invSc ? invSc.counterpart : (baseSc ? baseSc.userRole : '—');

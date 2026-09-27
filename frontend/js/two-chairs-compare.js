@@ -1,14 +1,25 @@
 /* ============================================================
    Экран сравнительного анализа «Два стула» (two-chairs-compare.html).
-   Две карточки раундов + блок сравнения по ролям. Пока умная
-   модель не подключена для сквозного сравнения — текст формируется
-   локально из разницы оценок и интереса (мок помечен в UI).
+   ЕДИНЫЙ источник данных — merged-запись пары (NTData.findTwoChairsRecord):
+   и карточки раундов, и сравнительный анализ читают только firstRound/
+   secondRound этой записи. Сценарии (роли) подтягиваются с бэкенда только
+   для подписей ролей; при недоступности — имена ролей из самой записи.
+   Пока умная модель не подключена — текст анализа формируется локально
+   из разницы оценок и интереса (мок помечен в UI).
    ============================================================ */
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const params = new URLSearchParams(location.search);
+
+  /* Оценка хранится на сервере в шкале 0–100; в UI везде показываем /10. */
+  function fmtScore(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    const tens = n > 10 ? n / 10 : n;
+    return (Math.round(tens * 10) / 10).toString().replace('.', ',');
+  }
 
   function verdict(interest, ended) {
     if (ended === 'exit') return { icon: '✗', cls: 'tc-verdict--muted', text: 'Прерван' };
@@ -17,16 +28,18 @@
     return { icon: '✗', cls: 'tc-verdict--muted', text: 'Не сложилось' };
   }
 
+  /* r — слот merged-записи (уже нормализован NTData.pairRounds), sc — сценарий или null */
   function roundCard(n, r, sc) {
-    if (!r || !r.sessionId) {
+    if (!r) {
       return `<article class="tc-round-card"><h3>Диалог ${n}</h3><p class="tc-muted">Раунд ещё не сыгран.</p></article>`;
     }
     const v = verdict(r.interest ?? 0, r.ended);
+    const score = fmtScore(r.score);
     return `<article class="tc-round-card">
       <h3>Диалог ${n} · ${esc(r.title || (sc && sc.title) || 'Сценарий')}</h3>
-      <p class="tc-muted">Ваша роль: <b>${esc(sc ? sc.userRole : '—')}</b><br>Собеседник: ${esc(sc ? sc.counterpart : '—')}</p>
+      <p class="tc-muted">Ваша роль: <b>${esc((sc && sc.userRole) || r.role || '—')}</b><br>Собеседник: ${esc((sc && sc.counterpart) || '—')}</p>
       <p class="tc-verdict ${v.cls}" style="font-size:15px"><span aria-hidden="true">${v.icon}</span> ${esc(v.text)}</p>
-      <div class="tc-score-line"><span>Оценка разбора</span><span>${Number.isFinite(Number(r.score)) ? r.score + ' баллов' : 'без оценки'}</span></div>
+      <div class="tc-score-line"><span>Оценка разбора</span><span>${score != null ? score + '/10' : 'без оценки'}</span></div>
       <div class="tc-score-line"><span>Интерес</span><span>${Number(r.interest) || 0}%</span></div>
       <a class="btn btn--secondary" href="results.html?id=${encodeURIComponent(r.sessionId)}">Полный разбор</a>
     </article>`;
@@ -40,13 +53,12 @@
     </div>`;
   }
 
-  function analysisText(rec, scA, scB) {
-    const i1 = Number(rec.firstRound && rec.firstRound.interest) || 0;
-    const i2 = Number(rec.secondRound && rec.secondRound.interest) || 0;
-    const s1 = Number(rec.firstRound && rec.firstRound.score) || 0;
-    const s2 = Number(rec.secondRound && rec.secondRound.score) || 0;
-    const roleA = scA ? scA.userRole : 'роль А';
-    const roleB = scB ? scB.userRole : 'роль Б';
+  /* Анализ читает ТОЛЬКО слоты merged-записи (r1/r2) */
+  function analysisText(r1, r2, roleA, roleB) {
+    const i1 = Number(r1.interest) || 0;
+    const i2 = Number(r2.interest) || 0;
+    const s1 = Number(r1.score) || 0;
+    const s2 = Number(r2.score) || 0;
     const diff = (i2 + s2 / 2) - (i1 + s1 / 2);
     const confident = Math.abs(diff) < 8 ? 'В обеих ролях вы держались примерно одинаково уверенно.'
       : diff > 0 ? `Во второй роли (${roleB}) вы держались увереннее.`
@@ -60,35 +72,54 @@
     return { confident, recs, mock: true };
   }
 
-  function renderAnalysis(rec, scA, scB) {
-    $('tc-loading').hidden = true;
-    $('tc-rounds').hidden = false;
-    $('tc-analysis').hidden = false;
-    $('tc-final-actions').hidden = false;
-    $('tc-compare-title').textContent = (rec.title || 'Сценарий') + ' — две стороны сыграны';
-    $('tc-rounds').innerHTML = roundCard(1, rec.firstRound, scA) + roundCard(2, rec.secondRound, scB);
+  function hideLoading() { $('tc-loading').hidden = true; }
 
-    const a = analysisText(rec, scA, scB);
-    const i1 = Number(rec.firstRound && rec.firstRound.interest) || 0;
-    const i2 = Number(rec.secondRound && rec.secondRound.interest) || 0;
+  function renderIncomplete(record, rounds, scA, scB) {
+    hideLoading();
+    $('tc-compare-title').textContent = (record.title || 'Сценарий') + ' — диалог 2 ещё не завершён';
+    $('tc-rounds').hidden = false;
+    $('tc-rounds').innerHTML = roundCard(1, rounds.r1, scA) + roundCard(2, rounds.r2, scB);
+    $('tc-analysis').hidden = false;
+    $('tc-analysis-body').innerHTML = '<p class="tc-muted">Полный сравнительный анализ появится после второго раунда. ' +
+      '<a href="two-chairs-pause.html?pair=' + encodeURIComponent(record.pairId || '') + '">Вернуться к паузе</a>.</p>';
+    $('tc-final-actions').hidden = false;
+    bindActions(record, scA);
+  }
+
+  function renderComplete(record, rounds, scA, scB) {
+    hideLoading();
+    $('tc-compare-title').textContent = (record.title || 'Сценарий') + ' — две стороны сыграны';
+    $('tc-rounds').hidden = false;
+    $('tc-rounds').innerHTML = roundCard(1, rounds.r1, scA) + roundCard(2, rounds.r2, scB);
+
+    const roleA = (scA && scA.userRole) || rounds.r1.role || 'роль А';
+    const roleB = (scB && scB.userRole) || rounds.r2.role || 'роль Б';
+    const a = analysisText(rounds.r1, rounds.r2, roleA, roleB);
+    const i1 = Number(rounds.r1.interest) || 0;
+    const i2 = Number(rounds.r2.interest) || 0;
+    $('tc-analysis').hidden = false;
     $('tc-analysis-body').innerHTML = `
       <div class="tc-bars">
-        ${bar('Заинтересованность собеседника — диалог 1 (' + (scA ? scA.userRole : 'роль А') + ')', i1, false)}
-        ${bar('Заинтересованность собеседника — диалог 2 (' + (scB ? scB.userRole : 'роль Б') + ')', i2, true)}
+        ${bar('Заинтересованность собеседника — диалог 1 (' + roleA + ')', i1, false)}
+        ${bar('Заинтересованность собеседника — диалог 2 (' + roleB + ')', i2, true)}
       </div>
       <p class="tc-analysis-text"><b>${esc(a.confident)}</b></p>
       <ul class="tc-recs">${a.recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
       <p class="tc-muted">Черновик анализа собран локально из итогов двух раундов${a.mock ? ' (мок до подключения сравнительной модели)' : ''}.</p>`;
+    $('tc-final-actions').hidden = false;
+    bindActions(record, scA);
+  }
 
+  function bindActions(record, scA) {
     $('tc-replay-btn').onclick = () => {
       NTData.clearTwoChairsPlan();
-      location.href = 'two-chairs-prelaunch.html?scenario=' + encodeURIComponent((scA && scA.id) || rec.pairId || '');
+      location.href = 'two-chairs-prelaunch.html?scenario=' + encodeURIComponent((scA && scA.id) || record.pairId || '');
     };
     $('tc-other-btn').href = 'two-chairs.html';
   }
 
   function fail(message) {
-    $('tc-loading').hidden = true;
+    hideLoading();
     $('tc-analysis').hidden = false;
     $('tc-analysis-body').innerHTML = `<p class="tc-error">${esc(message)}</p>
       <p><a href="two-chairs.html">Вернуться к выбору сценария</a></p>`;
@@ -103,26 +134,32 @@
     fail('Сравнительный анализ доступен после обоих диалогов. Запись пары не найдена в этом браузере.');
     return;
   }
-  if (!record.complete) {
-    // Раунд 2 ещё не сыгран — показываем то, что есть, с подсказкой.
-    Promise.all([NTData.getScenario(plan ? plan.scenarioId : pairId).catch(() => null),
-                 NTData.getScenario(plan ? plan.invertedId : '').catch(() => null)])
-      .then(([scA, scB]) => {
-        $('tc-loading').hidden = true;
-        $('tc-rounds').hidden = false;
-        $('tc-rounds').innerHTML = roundCard(1, record.firstRound, scA) + roundCard(2, record.secondRound, scB);
-        $('tc-analysis').hidden = false;
-        $('tc-analysis-body').innerHTML = '<p class="tc-muted">Диалог 2 ещё не завершён — полный анализ появится после второго раунда. <a href="two-chairs-pause.html?pair=' +
-          encodeURIComponent(record.pairId || '') + '">Вернуться к паузе</a>.</p>';
-        $('tc-final-actions').hidden = false;
-      });
+
+  // Нормализованные слоты — единственный источник правды о сыгранных раундах.
+  const rounds = NTData.pairRounds(record);
+  const scenarioIds = [
+    (plan && plan.scenarioId) || record.pairId,
+    (plan && plan.invertedId) || null
+  ];
+
+  function loadScenarios() {
+    return Promise.all(scenarioIds.map((id) => (id ? NTData.getScenario(id).catch(() => null) : null)));
+  }
+
+  if (!rounds.complete) {
+    // Прерванный режим: без спиннера, без бара диалога 2, со ссылкой на паузу.
+    loadScenarios().then(([scA, scB]) => renderIncomplete(record, rounds, scA, scB))
+      .catch(() => renderIncomplete(record, rounds, null, null));
     return;
   }
 
-  /* Состояние загрузки живёт ~1.2с, затем данные из записи пары + сценарии */
-  Promise.all([
-    NTData.getScenario(plan ? plan.scenarioId : record.pairId).catch(() => null),
-    NTData.getScenario(plan ? plan.invertedId : (plan && plan.pairId ? plan.pairId + '_tc' : '')).catch(() => null),
-    new Promise((resolve) => setTimeout(resolve, 1200))
-  ]).then(([scA, scB]) => renderAnalysis(record, scA, scB));
+  /* Состояние загрузки живёт ровно ~1.2с (мок-задержка), затем скрывается
+     безусловно — обе ветки then/catch вызывают hideLoading через render*. */
+  let settled = false;
+  const done = (fn) => (args) => { if (settled) return; settled = true; fn(...args); };
+  Promise.all([loadScenarios(), new Promise((resolve) => setTimeout(resolve, 1200))])
+    .then(done(([pair, sc]) => renderComplete(record, rounds, pair[0], pair[1])))
+    .catch(done(() => renderComplete(record, rounds, null, null)));
+  // Страховка: если что-то зависло — спиннер всё равно исчезнет.
+  setTimeout(() => { if (!settled) { settled = true; renderComplete(record, rounds, null, null); } }, 6000);
 })();

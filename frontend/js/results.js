@@ -32,6 +32,13 @@
     }[tone] || 'var(--accent)';
   }
 
+  function fmtScore10(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    const tens = n > 10 ? n / 10 : n;
+    return (Math.round(tens * 10) / 10).toString().replace('.', ',');
+  }
+
   function pillClass(difficulty) {
     return { easy: 'pill--easy', mid: 'pill--mid', hard: 'pill--hard' }[difficulty] || 'pill--mid';
   }
@@ -86,6 +93,16 @@
 
     empty.remove();
 
+    /* Баннер возврата к паузе, если разбор открыт из режима «Два стула». */
+    const tcParams = new URLSearchParams(location.search);
+    if (tcParams.get('from') === 'two-chairs' && tcParams.get('pair')) {
+      const banner = document.createElement('div');
+      banner.className = 'tc-return-banner';
+      banner.innerHTML = `<span>Вы просматриваете разбор раунда режима «Два стула».</span>` +
+        `<a class="btn btn--secondary" href="two-chairs-pause.html?pair=${encodeURIComponent(tcParams.get('pair'))}">Вернуться к паузе</a>`;
+      root.insertBefore(banner, root.firstChild);
+    }
+
     const card = document.createElement('article');
     card.className = 'results__card';
     card.setAttribute('data-reveal', '');
@@ -114,8 +131,8 @@
 
       <section class="metrics" aria-label="Ключевые метрики">
         <div class="metric">
-          <span class="metric__label">Баллы</span>
-          <span class="metric__value">${result.score ?? '—'}</span>
+          <span class="metric__label">Оценка</span>
+          <span class="metric__value">${fmtScore10(result.score) != null ? fmtScore10(result.score) + '/10' : '—'}</span>
         </div>
         <div class="metric">
           <span class="metric__label">Ходов</span>

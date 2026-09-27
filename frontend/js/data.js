@@ -269,12 +269,13 @@ window.NTData = (function () {
   /* Хелпер режима «Два стула»: раунд (1 или 2) + id пары -> extra-поля записи истории */
   function twoChairsExtra(plan, round) {
     if (!plan || !plan.pairId || !round) return {};
+    // ВАЖНО: слоты раундов НЕ передаются заранее — их заполняет
+    // updatePairRounds из фактических данных сессии. Заготовка со
+    // значениями null сбивала merge и экран сравнения читал «пустой» раунд.
     return {
       twoChairs: true,
       pairId: plan.pairId,
-      round,
-      firstRound: round === 1 ? { sessionId: null, score: null, interest: null } : undefined,
-      secondRound: round === 2 ? { sessionId: null, score: null, interest: null } : undefined
+      round
     };
   }
   function updatePairRounds(record) {
@@ -282,7 +283,7 @@ window.NTData = (function () {
     const prev = record[slot] || {};
     // interest в слот пары кладём уже нормализованным (в процентах) — mapSession
     // это делает сам; поле нужно для бейджа ✓/⚠/✗ в истории и на паузе.
-    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, ended: record.ended, verdict: pairVerdict(record), title: record.title, mode: record.mode };
+    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, ended: record.ended, verdict: pairVerdict(record), title: record.title, mode: record.mode, role: record.role || prev.role || null };
     if (record.round === 1 && !record.secondRound) record.secondRound = null;
     if (record.round === 2 && !record.firstRound) {
       // Слот первого раунда мог быть создан ранее как заготовка (sessionId: null) —
@@ -296,6 +297,11 @@ window.NTData = (function () {
     const record = mapSession(raw, { [scenario.id]: scenario });
     record.ended = raw.status === 'abandoned' ? 'exit' : 'finished';
     Object.assign(record, extra);
+    // Имя роли пользователя — для карточек сравнения без обращения к плану.
+    if (scenario) {
+      record.role = scenario.user_role || scenario.userRole || null;
+      record.counterpart = scenario.counterpart || scenario.counterpart_role || null;
+    }
     if (record.twoChairs) updatePairRounds(record);
     // Важно: читаем историю БЕЗ фильтрации по id — вторая попытка того же
     // раунда сохраняет тот же sessionId и должна заменить старую запись.
@@ -312,9 +318,16 @@ window.NTData = (function () {
         // повторном сохранении того же session_id: не затираем другой слот).
         const prevThis = existing[thisRound];
         const other = existing[otherRound];
+        // Слот текущего раунда — всегда свежие данные saveCompletedSession
+        // (updatePairRounds уже заполнил sessionId/score/interest/verdict).
+        // Если по какой-то причине слот пустой, а в самой записи пары он был
+        // заполнен ранее — не теряем его.
+        const thisSlot = record[thisRound] && record[thisRound].sessionId
+          ? record[thisRound]
+          : (prevThis && prevThis.sessionId ? prevThis : record[thisRound] || null);
         const merged = { ...existing, ...record, id: existing.id, date: existing.date,
           round: Math.max(Number(existing.round) || 1, Number(record.round) || 1),
-          [thisRound]: record,
+          [thisRound]: thisSlot && thisSlot.sessionId ? thisSlot : null,
           [otherRound]: other && !other.sessionId ? null : (other || null) };
         // Если этот же раунд уже был сыгран другой сессией — сохраняем её в
         // extra-слоте firstExtra/secondExtra, чтобы история осталась полной.
@@ -548,7 +561,15 @@ window.NTData = (function () {
   }
   function clearTwoChairsPlan() { localStorage.removeItem(TWO_CHAIRS_PLAN_KEY); }
   function findTwoChairsRecord(id) {
-    return readHistory().find((item) => item.twoChairs && (item.pairId === id || item.id === id)) || null;
+    if (!id) return null;
+    // Единый источник данных для паузы и сравнения: если по pairId есть
+    // несколько записей (merge-гонка, старая история с дублями) — берём ту,
+    // где заполнено больше раундов.
+    const rows = readHistory().filter((item) => item.twoChairs && (item.pairId === id || item.id === id));
+    const filled = (row) => Number(Boolean(row.firstRound && row.firstRound.sessionId)) +
+      Number(Boolean(row.secondRound && row.secondRound.sessionId));
+    rows.sort((a, b) => filled(b) - filled(a));
+    return rows[0] || null;
   }
   /* Актуализация плана «Два стула»: объединяем с сохранённой записью пары,
      чтобы флаги round1Done/round2Done не расходились с историей. */
@@ -578,6 +599,18 @@ window.NTData = (function () {
     if (!rows.some((row) => isPairComplete(row, pairId))) return;
     const kept = rows.filter((row) => !(row.pairId === pairId) || isPairComplete(row, pairId));
     if (kept.length !== rows.length) writeHistory(kept);
+  }
+  /* Единый нормализатор слотов пары: старые записи могли содержать
+     заготовки { sessionId: null }. Для UI раунд считается сыгранным
+     только если есть sessionId. */
+  function normalizePairSlot(slot) {
+    return slot && slot.sessionId ? slot : null;
+  }
+  function pairRounds(record) {
+    if (!record) return { r1: null, r2: null, complete: false };
+    const r1 = normalizePairSlot(record.firstRound);
+    const r2 = normalizePairSlot(record.secondRound);
+    return { r1, r2, complete: Boolean(r1 && r2) };
   }
 
   function health() { return api('/health'); }
@@ -650,7 +683,7 @@ window.NTData = (function () {
     openSession, loadSession, resumeOrCreateSession, playTurn, analyzeResult, askHint, abandonSession,
     generateScenario, refineScenario, listEditableScenarios, createScenario, updateScenario, validateScenario,
     publishScenario, createTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
-    findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, pairVerdict, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
+    findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, pairVerdict, pairRounds, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
     listLocalHistory, prunePairDuplicates,
     health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
     exportLocalHistory, clearLocalHistory, localPrivacyInfo, prepareLocalReplay, getLocalReplay,

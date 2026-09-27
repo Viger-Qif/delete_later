@@ -8,10 +8,30 @@
     abandoned: 'прервано',
     active: 'в процессе'
   };
+  /* Заглушка блока «Достижения»: логика разблокировки не реализована. */
+  const ACHIEVEMENTS = [
+    { id: 'two-faced-janus', title: 'Двуликий Янус', desc: 'Пройдите 5 режимов двух стульев', unlocked: false }
+  ];
+  function renderAchievements() {
+    const host = $('profile-achievements');
+    if (!host) return;
+    host.innerHTML = ACHIEVEMENTS.map((a) => `
+      <div class="achievement-card${a.unlocked ? '' : ' achievement-card--locked'}" title="${esc(a.desc)}">
+        <span class="achievement-card__icon" aria-hidden="true">${a.unlocked ? '🏆' : '🔒'}</span>
+        <b class="achievement-card__title">${esc(a.title)}</b>
+        <small class="achievement-card__desc">${esc(a.desc)}</small>
+      </div>`).join('');
+  }
+  function fmtScore10(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    const tens = n > 10 ? n / 10 : n;
+    return (Math.round(tens * 10) / 10).toString().replace('.', ',');
+  }
   function renderResults(rows) {
     const host = $('profile-results');
     if (!rows.length) { host.innerHTML = '<p class="muted">Пока нет завершённых попыток. Начните тренировку в каталоге.</p>'; return; }
-    host.innerHTML = rows.slice(0, 5).map((row) => `<div class="profile-row"><a href="results.html?id=${encodeURIComponent(row.id)}">${esc(row.scenario_title || row.scenario_id)}</a><small>${esc(row.score ?? '—')} баллов · ${esc(STATUS_LABELS[row.status] || 'завершено')}</small></div>`).join('');
+    host.innerHTML = rows.slice(0, 5).map((row) => `<div class="profile-row"><a href="results.html?id=${encodeURIComponent(row.id)}">${esc(row.scenario_title || row.scenario_id)}</a><small>${fmtScore10(row.score) != null ? fmtScore10(row.score) + '/10' : '—'} · ${esc(STATUS_LABELS[row.status] || 'завершено')}</small></div>`).join('');
   }
   function renderScenarios(rows) {
     const host = $('profile-scenarios-list');
@@ -28,9 +48,9 @@
     }
     const scores = results.map((x) => Number(x.score)).filter((x) => Number.isFinite(x));
     $('profile-attempts').textContent = results.length;
-    $('profile-score').textContent = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : '—';
+    $('profile-score').textContent = scores.length ? (Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) / 10 * 10) / 10).toString().replace('.', ',') + '/10' : '—';
     $('profile-scenarios').textContent = scenarios.filter((x) => x.scenario_type === 'user').length;
-    renderResults(results); renderScenarios(scenarios);
+    renderResults(results); renderScenarios(scenarios); renderAchievements();
   }).catch((error) => { $('profile-results').innerHTML = `<p class="muted">${esc(error.message)}</p>`; });
   $('logout-btn').addEventListener('click', () => NTData.logout().then(() => location.href = 'index.html'));
   const privacyInfo = NTData.localPrivacyInfo();

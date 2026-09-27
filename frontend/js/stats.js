@@ -43,7 +43,7 @@
       return values.length ? Math.round(values.reduce((acc, value) => acc + value, 0) / values.length) : null;
     };
     sum.total.textContent = total;
-    sum.score.textContent = avg((s) => s.score) ?? '—';
+    { const a = avg((s) => s.score); sum.score.textContent = a == null ? '—' : (Math.round(a / 10 * 10) / 10).toString().replace('.', ','); }
     const averageInterest = avg((s) => s.interest);
     sum.interest.textContent = averageInterest == null ? '—' : averageInterest + '%';
     sum.time.textContent = fmtTime(sessions.reduce((acc, s) => acc + (s.minutes || 0), 0));
@@ -71,7 +71,9 @@
 
   function fmtScore(value) {
     const n = Number(value);
-    return Number.isFinite(n) ? Math.round(n) : '—';
+    if (!Number.isFinite(n)) return '—';
+    const tens = n > 10 ? n / 10 : n;
+    return (Math.round(tens * 10) / 10).toString().replace('.', ',');
   }
 
   /* Одна запись на весь режим «Два стула»: бейдж, две оценки, клик — на сравнение */
@@ -80,7 +82,7 @@
     const v2 = s.secondRound && s.secondRound.sessionId ? (s.secondRound.verdict || NTData.pairVerdict(s.secondRound)) : '·';
     const both = Boolean(s.complete || (s.firstRound && s.secondRound && s.firstRound.sessionId && s.secondRound.sessionId));
     const href = 'two-chairs-compare.html?pair=' + encodeURIComponent(s.pairId);
-    const scores = `Раунд 1: ${fmtScore(s.firstRound && s.firstRound.score)}/100 · Раунд 2: ${both ? fmtScore(s.secondRound && s.secondRound.score) : '—'}/100`;
+    const scores = `Раунд 1: ${fmtScore(s.firstRound && s.firstRound.score)}/10 · Раунд 2: ${both ? fmtScore(s.secondRound && s.secondRound.score) + '/10' : '—'}`;
     return `
       <a class="record record--two-chairs" href="${href}">
         <span class="record__icon" aria-hidden="true">🪑</span>
@@ -103,7 +105,7 @@
           <span class="record__title">${s.title}${s.twoChairs ? ' <span class="tc-badge">2 стула</span>' : ''}</span>
           <span class="record__meta">${fmtDate(s.date)} · ${s.mode === 'audio' ? 'голос' : 'текст'} · ${s.turns} ходов</span>
         </span>
-        <span class="record__stat">${Number.isFinite(Number(s.score)) ? s.score + ' балл.' : 'без оценки'}</span>
+        <span class="record__stat">${Number.isFinite(Number(s.score)) ? fmtScore(s.score) + '/10' : 'без оценки'}</span>
         <span class="record__stat record__stat--interest">${s.interest}%</span>
         <svg class="record__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="9 18 15 12 9 6"/>

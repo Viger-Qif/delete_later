@@ -82,3 +82,7 @@
   border: 1px solid rgba(16,34,28,.1); text-decoration: none; color: inherit; background: #fff;
 }
 .tc-history a:hover { border-color: var(--accent, #236B56); }
+
+/* Баннер возврата к паузе на обычном экране результатов */
+.tc-return-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:13px 16px;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);background:var(--surface)}
+.tc-return-banner .btn{min-height:44px}
