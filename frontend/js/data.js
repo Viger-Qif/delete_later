@@ -248,6 +248,24 @@ window.NTData = (function () {
   function writeHistory(rows) {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(rows.slice(0, 50)));
   }
+  /* Итоговая отметка раунда для бейджей в истории/на паузе: ✓ / ⚠ / ✗ */
+  function pairVerdict(record) {
+    if (!record) return null;
+    if (record.ended === 'exit') return '✗';
+    const interest = Number(record.interest);
+    if (Number.isFinite(interest)) {
+      if (interest >= 70) return '✓';
+      if (interest >= 45) return '⚠';
+      return '✗';
+    }
+    const score = Number(record.score);
+    if (Number.isFinite(score)) {
+      if (score >= 70) return '✓';
+      if (score >= 45) return '⚠';
+      return '✗';
+    }
+    return '—';
+  }
   /* Хелпер режима «Два стула»: раунд (1 или 2) + id пары -> extra-поля записи истории */
   function twoChairsExtra(plan, round) {
     if (!plan || !plan.pairId || !round) return {};
@@ -262,7 +280,9 @@ window.NTData = (function () {
   function updatePairRounds(record) {
     const slot = record.round === 1 ? 'firstRound' : 'secondRound';
     const prev = record[slot] || {};
-    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, title: record.title, mode: record.mode };
+    // interest в слот пары кладём уже нормализованным (в процентах) — mapSession
+    // это делает сам; поле нужно для бейджа ✓/⚠/✗ в истории и на паузе.
+    record[slot] = { ...prev, sessionId: record.id, score: record.score ?? null, interest: record.interest ?? null, ended: record.ended, verdict: pairVerdict(record), title: record.title, mode: record.mode };
     if (record.round === 1 && !record.secondRound) record.secondRound = null;
     if (record.round === 2 && !record.firstRound) {
       // Слот первого раунда мог быть создан ранее как заготовка (sessionId: null) —
@@ -288,11 +308,20 @@ window.NTData = (function () {
       if (existing) {
         const thisRound = record.round === 1 ? 'firstRound' : 'secondRound';
         const otherRound = record.round === 1 ? 'secondRound' : 'firstRound';
+        // Предыдущее значение этого раунда в записи пары (актуально при
+        // повторном сохранении того же session_id: не затираем другой слот).
+        const prevThis = existing[thisRound];
         const other = existing[otherRound];
         const merged = { ...existing, ...record, id: existing.id, date: existing.date,
           round: Math.max(Number(existing.round) || 1, Number(record.round) || 1),
           [thisRound]: record,
           [otherRound]: other && !other.sessionId ? null : (other || null) };
+        // Если этот же раунд уже был сыгран другой сессией — сохраняем её в
+        // extra-слоте firstExtra/secondExtra, чтобы история осталась полной.
+        if (prevThis && prevThis.sessionId && prevThis.sessionId !== record.id) {
+          merged[thisRound === 'firstRound' ? 'secondExtra' : 'firstExtra'] =
+            [].concat(merged[thisRound === 'firstRound' ? 'secondExtra' : 'firstExtra'] || [], prevThis);
+        }
         if (merged.firstRound && merged.secondRound) merged.complete = true;
         rows.splice(rows.indexOf(existing), 1, merged);
         writeHistory(rows);
@@ -332,6 +361,11 @@ window.NTData = (function () {
     });
   }
   function listSessions() { return fetchSessions(); }
+  /* Быстрая локальная история (тот же формат, что у listSessions) для страниц,
+     которым нужен режим «Два стула» без серверного round-trip. */
+  function listLocalHistory() {
+    return readHistory().slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
   function listResults() { return api('/sessions/results').then((data) => data.items || []); }
   async function getSession(id) {
     const all = await fetchSessions();
@@ -530,6 +564,21 @@ window.NTData = (function () {
     }
     return plan;
   }
+  /* Одна запись на весь режим «Два стула»: если в локальной истории уже есть
+     запись пары с обоими сыгранными раундами, все остальные записи этой пары —
+     дубликаты (например, после merge-гонки), их можно вычистить. */
+  function isPairComplete(row, pairId) {
+    return Boolean(row && row.twoChairs && row.pairId === pairId &&
+      row.firstRound && row.firstRound.sessionId &&
+      row.secondRound && row.secondRound.sessionId);
+  }
+  function prunePairDuplicates(pairId) {
+    if (!pairId) return;
+    const rows = readHistory();
+    if (!rows.some((row) => isPairComplete(row, pairId))) return;
+    const kept = rows.filter((row) => !(row.pairId === pairId) || isPairComplete(row, pairId));
+    if (kept.length !== rows.length) writeHistory(kept);
+  }
 
   function health() { return api('/health'); }
   function modelsStatus(probe=false) {
@@ -601,7 +650,8 @@ window.NTData = (function () {
     openSession, loadSession, resumeOrCreateSession, playTurn, analyzeResult, askHint, abandonSession,
     generateScenario, refineScenario, listEditableScenarios, createScenario, updateScenario, validateScenario,
     publishScenario, createTwoChairsPair, saveTwoChairsPlan, getTwoChairsPlan, clearTwoChairsPlan,
-    findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
+    findTwoChairsRecord, twoChairsExtra, updatePairRounds, refreshTwoChairsPlan, pairVerdict, HISTORY_KEY, TWO_CHAIRS_PLAN_KEY,
+    listLocalHistory, prunePairDuplicates,
     health, modelsStatus, knowledgeStatus, authMe, logout, deleteAccount, saveCompletedSession,
     exportLocalHistory, clearLocalHistory, localPrivacyInfo, prepareLocalReplay, getLocalReplay,
     topicIcon, labels: LABELS, formatKnowledgeText, formatKnowledgePlainText,
